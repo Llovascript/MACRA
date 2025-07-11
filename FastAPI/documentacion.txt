@@ -1,0 +1,51 @@
+1.- ESTRUCTURA DE LOS ARCHIVOS
+
+ARCHIVOS PRINCIPALES:
+- main.py - Aplicación principal, configuración de rutas y middleware
+- database.py - Configuración de SQLAlchemy y conexión a base de datos
+- models.py - Modelos de datos (tablas de la base de datos)
+- schemas.py - Esquemas de validación con Pydantic
+- utils.py - Funciones utilitarias (hash de contraseñas, JWT)
+- dependencies.py - Dependencias de autenticación y autorización
+- requirements.txt - Lista de dependencias del proyecto
+
+CARPETA ENDPOINTS/:
+Contiene todos los endpoints organizados por funcionalidad:
+
+- autenticacion_endpoints.py - Login, registro, perfil
+- usuarios_endpoints.py - CRUD de usuarios
+- roles_endpoints.py - Gestión de roles
+- donaciones_endpoints.py - Gestión de donaciones
+- eventos_endpoints.py - Gestión de eventos
+- ubicaciones_endpoints.py - Estados y municipios
+- articulos_endpoints.py - Catálogo de productos
+- paquetes_endpoints.py - Paquetes de donación
+- entregas_endpoints.py - Control de entregas
+
+
+2.- ENTORNO VIRTUAL EN CASO DE NO ESTAR PRESENTE
+-Crear entorno virtual
+    python -m venv venv
+
+- Activar entorno virtual (Windows)
+    venv\Scripts\activate
+    venv/Scripts/activate
+
+3.- INSTALACION DE DEPENDENCIAS
+- Instalar todas las dependencias
+    pip install -r requirements.txt
+
+- Actualizar en caso de ser necesario
+    pip install -r requirements.txt --upgrade
+
+4.- EJECUCION DE LA API
+- Iniciar servidor de desarrollo
+    uvicorn main:app --reload
+
+5.- acceder a swagger
+http://127.0.0.1:8000/docs
+
+
+NOTAS:
+laravel aun no esta conectado a los endpoints para el login se trabajara en este tiempo
+
