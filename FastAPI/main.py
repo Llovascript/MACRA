@@ -13,8 +13,13 @@ from endpoints.articulos_endpoints import router as articulos_router
 from endpoints.paquetes_endpoints import router as paquetes_router
 from endpoints.entregas_endpoints import router as entregas_router
 
+from fastapi.middleware.cors import CORSMiddleware
+
 Base.metadata.create_all(bind=engine)
-app = FastAPI(title="Sistema de Donaciones API", version="1.0.0")
+app = FastAPI(
+    title="Sistema de Donaciones API",
+    description="API para gestionar donaciones, usuarios, roles y eventos",          
+    version="1.0.0")
 
 @app.get("/")
 def read_root():
@@ -24,7 +29,7 @@ def read_root():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_origins=["http://localhost:5001", "http://127.0.0.1:5001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -89,4 +94,4 @@ async def startup_event():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=5001)
