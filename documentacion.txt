@@ -1,11 +1,13 @@
+FastAPI
+
 1.- ESTRUCTURA DE LOS ARCHIVOS
 
-ARCHIVOS PRINCIPALES:
+ARCHIVOS PRINCIPALES API:
 - main.py - Aplicación principal, configuración de rutas y middleware
 - database.py - Configuración de SQLAlchemy y conexión a base de datos
 - models.py - Modelos de datos (tablas de la base de datos)
 - schemas.py - Esquemas de validación con Pydantic
-- utils.py - Funciones utilitarias (hash de contraseñas, JWT)
+- utils.py - Funciones utilitarias (hash de contraseñas, JWT, secret key)
 - dependencies.py - Dependencias de autenticación y autorización
 - requirements.txt - Lista de dependencias del proyecto
 
@@ -46,6 +48,23 @@ Contiene todos los endpoints organizados por funcionalidad:
 http://127.0.0.1:8000/docs
 
 
-NOTAS:
-laravel aun no esta conectado a los endpoints para el login se trabajara en este tiempo
+LARAVEL
 
+NOTAS:
+- laravel aun no esta conectado a los endpoints para el login se trabajara en este tiempo
+- importante no hacer migraciones aun
+
+PASOS
+
+1.- Guzzle (conexion con la api, verificacion de instalacion, pasos para instalacion)
+- cd FrontWeb
+- verificacion de si existe guzzle: composer show guzzlehttp/guzzle
+- en caso de no estar guzzle instalado: composer require guzzlehttp/guzzle
+
+2.- Conexion a la api 
+- .env modificado con la conexion a la url base de la api y api token doinamico al hacer la peticion(falta esa parte)
+- creacion de su llave de seguridad laravel: php artisan key:generate
+- archivo nuevo: se creo una carpeta nueva llamada services en la carpeta app la ruta es app/services
+- dentro de services se creo un archivo llamado FastApiService.php el cual contiene las reglas de servicio de comunicacion con la api
+
+nota: a momento solo se ha generado las reglas de comunicacion con login y registro, aun no hay estilos ni front de login y registro
