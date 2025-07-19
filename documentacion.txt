@@ -37,7 +37,7 @@ Contiene todos los endpoints organizados por funcionalidad:
 - Instalar todas las dependencias
     pip install -r requirements.txt
 
-- Actualizar en caso de ser necesario
+- Actualizar en caso de ser necesario y tener las dependencias listas
     pip install -r requirements.txt --upgrade
 
 4.- EJECUCION DE LA API
