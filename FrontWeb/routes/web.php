@@ -1,18 +1,20 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
+// Rutas para mostrar vistas
+Route::get('/', [UserController::class, 'showLoginRegister'])->name('home');
+Route::get('/login', [UserController::class, 'showLoginRegister'])->name('login.register');
 
-Route::get('/', function () {
-    return view('welcome');
+// Rutas API para autenticación (estas son las que usará JavaScript)
+Route::post('/auth/login', [UserController::class, 'login'])->name('api.login');
+Route::post('/auth/register', [UserController::class, 'register'])->name('api.register');
+
+// Rutas protegidas
+Route::middleware(['auth.check'])->group(function () {
+    Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
 });
+
+// Ruta de logout (sin middleware porque necesita limpiar la sesión)
+Route::post('/logout', [UserController::class, 'logout'])->name('logout');
