@@ -220,4 +220,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MenuBeneficiario;
+export default BeneficiarioInicio;
