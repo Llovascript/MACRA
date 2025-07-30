@@ -30,7 +30,7 @@ Contiene todos los endpoints organizados por funcionalidad:
     python -m venv venv
 
 - Activar entorno virtual (Windows)
-    venv\Scripts\activate
+    venv/Scripts/activate
     venv/Scripts/activate
 
 3.- INSTALACION DE DEPENDENCIAS
