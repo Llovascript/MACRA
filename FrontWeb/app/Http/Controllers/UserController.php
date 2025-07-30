@@ -10,27 +10,18 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    // URL base de tu API FastAPI - CORREGIDA
-    private $apiBaseUrl = 'http://127.0.0.1:5001'; // Cambiado a 127.0.0.1 y puerto 5001
+    private $apiBaseUrl = 'http://127.0.0.1:5001';
 
-    /**
-     * Mostrar el formulario de login y registro
-     */
     public function showLoginRegister()
     {
         return view('auth.login');
     }
 
-    /**
-     * Procesar login del usuario
-     */
     public function login(Request $request)
     {
         try {
-            // Log para debug
             Log::info('Intento de login', ['correo' => $request->correo]);
 
-            // Validar datos de entrada
             $validator = Validator::make($request->all(), [
                 'correo' => 'required|email',
                 'contraseña' => 'required|min:6',
@@ -44,10 +35,6 @@ class UserController extends Controller
                 ], 400);
             }
 
-            // Log de la URL que se va a usar
-            Log::info('Conectando a API', ['url' => $this->apiBaseUrl . '/auth/login']);
-
-            // Hacer petición a la API FastAPI con más configuraciones
             $response = Http::timeout(30)
                 ->withHeaders([
                     'Content-Type' => 'application/json',
@@ -58,19 +45,12 @@ class UserController extends Controller
                     'contraseña' => $request->contraseña
                 ]);
 
-            Log::info('Respuesta de API', [
-                'status' => $response->status(),
-                'successful' => $response->successful()
-            ]);
-
             if ($response->successful()) {
                 $data = $response->json();
                 
-                // Guardar token en sesión
                 Session::put('access_token', $data['access_token']);
                 Session::put('token_type', $data['token_type']);
                 
-                // Obtener información del usuario
                 $userInfo = $this->getUserInfo($data['access_token']);
                 
                 if ($userInfo) {
@@ -107,15 +87,11 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Procesar registro del usuario
-     */
     public function register(Request $request)
     {
         try {
             Log::info('Intento de registro', ['correo' => $request->correo]);
 
-            // Validar datos de entrada
             $validator = Validator::make($request->all(), [
                 'nombre' => 'required|string|max:255',
                 'correo' => 'required|email|max:255',
@@ -131,7 +107,6 @@ class UserController extends Controller
                 ], 400);
             }
 
-            // Hacer petición a la API FastAPI
             $response = Http::timeout(30)
                 ->withHeaders([
                     'Content-Type' => 'application/json',
@@ -142,7 +117,7 @@ class UserController extends Controller
                     'correo' => $request->correo,
                     'contraseña' => $request->contraseña,
                     'rol_id' => $request->rol_id,
-                    'estatus_id' => 1 // Valor por defecto
+                    'estatus_id' => 1
                 ]);
 
             if ($response->successful()) {
@@ -174,9 +149,6 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Obtener información del usuario autenticado
-     */
     private function getUserInfo($accessToken)
     {
         try {
@@ -194,25 +166,18 @@ class UserController extends Controller
         return null;
     }
 
-    /**
-     * Cerrar sesión del usuario
-     */
     public function logout(Request $request)
     {
         Session::forget(['access_token', 'token_type', 'user']);
         Session::flush();
         
-        return redirect()->route('login.register')->with('message', 'Sesión cerrada exitosamente');
+        return redirect()->route('login')->with('message', 'Sesión cerrada exitosamente');
     }
 
-    /**
-     * Mostrar dashboard
-     */
     public function dashboard()
     {
-        // Verificar si el usuario está autenticado
         if (!Session::has('access_token')) {
-            return redirect()->route('login.register');
+            return redirect()->route('login');
         }
 
         $user = Session::get('user');
