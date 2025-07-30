@@ -14,8 +14,8 @@
                 </p>
 
                 <div class="buttons">
-                    <a href="#" class="button order-now">Iniciar Sesión</a>
-                    <a href="#" class="button contact-us">Regístrate</a>
+                    <a href="{{ route('login') }}" class="button order-now">Iniciar Sesión</a>
+                    <a href="{{ route('register') }}" class="button contact-us">Regístrate</a>
                 </div>
             </div>
             <div class="hero-image-wrapper">
