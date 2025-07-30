@@ -42,7 +42,7 @@ Contiene todos los endpoints organizados por funcionalidad:
 
 4.- EJECUCION DE LA API
 - Iniciar servidor de desarrollo
-    uvicorn main:app --reload
+    uvicorn main:app --reload --port 5001
 
 5.- acceder a swagger
 http://127.0.0.1:8000/docs
