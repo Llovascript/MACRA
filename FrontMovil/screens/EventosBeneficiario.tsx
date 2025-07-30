@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const EventosDisponibles = ({ navigation }) => {
+const EventosBeneficiario = ({ navigation }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages] = useState(5); // Ejemplo: 5 páginas totales
 
