@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Página de Inicio
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('home');
