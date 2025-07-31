@@ -1,5 +1,61 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap");
 
+.form-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 30px;
+        text-align: left;
+        letter-spacing: 2px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 1;
+    /* Asegúrate de que el fondo sea el color primario */
+    background-color: #3b141c;
+}
+
+.logo-container .logo-icon {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    mix-blend-mode: screen;
+    padding: 5px;
+    border-radius: 8px;
+    margin-right: 15px;
+    /* Asegúrate de que el contenedor padre tenga el background correcto */
+
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+.logo-main {
+    display: block;
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    line-height: 1;
+}
+
+.logo-sub {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    line-height: 1.2;
+    margin-top: 5px;
+}
+
+
 * {
   margin: 0;
   padding: 0;
@@ -82,7 +138,7 @@ form.sign-in-form {
 }
 
 .input-field:focus-within {
-  border-color: #5995fd;
+  border-color: #3b141c;
   background-color: #fff;
 }
 
@@ -110,6 +166,31 @@ form.sign-in-form {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+}
+
+.input-field select {
+  background: none;
+  outline: none;
+  border: none;
+  line-height: 1;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+  width: 100%;
+  height: 100%;
+  padding: 0 25px 0 5px;
+  cursor: pointer;
+  
+  /* Desactivar apariencia por defecto */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  
+  /* Flecha personalizada */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23acacac' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
 }
 
 /* Forzar estilos cuando hay autocompletado */
@@ -217,13 +298,13 @@ form.sign-in-form {
 }
 
 .social-icon:hover {
-  color: #4481eb;
-  border-color: #4481eb;
+  color: #3b141c;
+  border-color: #3b141c;
 }
 
 .btn {
   width: 150px;
-  background-color: #5995fd;
+  background-color: #3b141c;
   border: none;
   outline: none;
   height: 49px;
@@ -237,7 +318,7 @@ form.sign-in-form {
 }
 
 .btn:hover {
-  background-color: #4d84e2;
+  background-color: #3b141c;
 }
 
 .btn:disabled {
@@ -304,7 +385,7 @@ form.sign-in-form {
   top: -10%;
   right: 48%;
   transform: translateY(-50%);
-  background-image: linear-gradient(-45deg, #4481eb 0%, #04befe 100%);
+  background-image: linear-gradient(-45deg, #3b141c 0%, #3b141c 100%);
   transition: 1.8s ease-in-out;
   border-radius: 50%;
   z-index: 6;

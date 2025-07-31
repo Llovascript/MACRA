@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
 // Rutas para mostrar vistas
+Route::get('/index', [UserController::class, 'showIndex'])->name('index');
 Route::get('/', [UserController::class, 'showLoginRegister'])->name('home');
 Route::get('/login', [UserController::class, 'showLoginRegister'])->name('login.register');
 

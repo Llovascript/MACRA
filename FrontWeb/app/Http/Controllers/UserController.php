@@ -218,4 +218,8 @@ class UserController extends Controller
         $user = Session::get('user');
         return view('dashboard', compact('user'));
     }
+
+    public function showIndex() {
+        return view('index');
+    }
 }
