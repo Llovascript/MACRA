@@ -11,7 +11,7 @@ router = APIRouter(tags=["articulos"])
 def create_articulo(
     articulo: ArticuloCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     categoria = db.query(CategoriaArt).filter(CategoriaArt.id == articulo.categoria_id).first()
     if not categoria:
@@ -33,7 +33,7 @@ def create_articulo(
 def create_presentacion(
     presentacion: ArtPresentacionCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     articulo = db.query(Articulo).filter(Articulo.id == presentacion.articulo_id).first()
     if not articulo:

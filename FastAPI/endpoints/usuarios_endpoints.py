@@ -13,7 +13,7 @@ router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 def create_usuario(
     usuario: UsuarioCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     rol = db.query(Rol).filter(Rol.id == usuario.rol_id).first()
     if not rol:
@@ -47,7 +47,7 @@ def get_usuarios(
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     return db.query(Usuario).filter(Usuario.del_flag == False).offset(skip).limit(limit).all()
 
@@ -56,20 +56,20 @@ def get_usuario(
     usuario_id: int, 
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
-):
-    db_user = db.query(Usuario).filter(Usuario.id == current_user.id).first()
-    user_role = db.query(Rol).filter(Rol.id == db_user.rol_id).first()
-    
-    if current_user.id != usuario_id and user_role.nombre not in ["admin", "moderador"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions to access this user"
-        )
+):  
     
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id, Usuario.del_flag == False).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario not found")
-    return usuario
+    if current_user.rol.nombre == "admin":
+        return usuario
+    elif current_user.id == usuario_id:
+        return usuario
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions to access this user"
+        )
 
 @router.put("/{usuario_id}", response_model=UsuarioResponse)
 def update_usuario(
@@ -116,7 +116,6 @@ def delete_usuario(
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario not found")
     
-    # Soft delete
     usuario.del_flag = True
     try:
         db.commit()
@@ -124,3 +123,27 @@ def delete_usuario(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error deleting user")
+
+@router.put("/{usuario_id}/aprobar", response_model=UsuarioResponse)
+def approve_user(
+    usuario_id: int,
+    aprobacion: bool,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["admin"]))
+):
+    usuario = db.query(Usuario).filter(
+        Usuario.id == usuario_id,
+        Usuario.del_flag == False
+    ).first()
+    
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    usuario.aprobacion = aprobacion
+    try:
+        db.commit()
+        db.refresh(usuario)
+        return usuario
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Error actualizando aprobación de usuario")

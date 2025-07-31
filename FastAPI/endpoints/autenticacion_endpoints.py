@@ -8,7 +8,7 @@ from utils import get_password_hash, authenticate_user, create_access_token, ACC
 from dependencies import get_current_active_user
 import logging
 
-# Configurar logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -19,38 +19,32 @@ def register_user(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     try:
         logger.info(f"Intento de registro para: {usuario.correo}")
         
-        # Check if rol exists
         rol = db.query(Rol).filter(Rol.id == usuario.rol_id).first()
         if not rol:
             logger.error(f"Rol {usuario.rol_id} no encontrado")
             raise HTTPException(status_code=400, detail="Rol not found")
             
-        # Check if estatus exists (if provided)
         if usuario.estatus_id:
             estatus = db.query(EstatusG).filter(EstatusG.id == usuario.estatus_id).first()
             if not estatus:
                 logger.error(f"Estatus {usuario.estatus_id} no encontrado")
                 raise HTTPException(status_code=400, detail="Estatus not found")
-            
-        # Check if email already exists
+        
         existing_user = db.query(Usuario).filter(Usuario.correo == usuario.correo).first()
         if existing_user:
             logger.error(f"Email {usuario.correo} ya está registrado")
             raise HTTPException(status_code=400, detail="Email already registered")
             
-        # Hash password
         hashed_password = get_password_hash(usuario.contraseña)
         logger.info("Contraseña hasheada exitosamente")
         
-        # Create user with hashed password
         usuario_dict = usuario.dict()
         usuario_dict["contraseña"] = hashed_password
         
-        # Agregar valores por defecto si no están presentes
         if not usuario_dict.get("estatus_id"):
             usuario_dict["estatus_id"] = 1
         if not usuario_dict.get("aprobacion"):
-            usuario_dict["aprobacion"] = True  # Auto-aprobar por ahora
+            usuario_dict["aprobacion"] = True  # Auto-aprobar por ahora(cambiar despues a false)
         if not usuario_dict.get("del_flag"):
             usuario_dict["del_flag"] = False
             
@@ -67,14 +61,13 @@ def register_user(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         logger.error(f"Error creando usuario: {str(e)}")
-        raise HTTPException(status_code=400, detail="Error creating user")
+        raise HTTPException(status_code=400, detail="Error creando usuario")
 
 @router.post("/login", response_model=Token)
 async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     try:
         logger.info(f"=== INICIO LOGIN PARA: {login_data.correo} ===")
         
-        # Buscar usuario primero para debug
         user = db.query(Usuario).filter(Usuario.correo == login_data.correo).first()
         if not user:
             logger.error(f"Usuario {login_data.correo} no encontrado en la base de datos")
@@ -87,7 +80,6 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         logger.info(f"Usuario encontrado - ID: {user.id}, Aprobación: {user.aprobacion}, Del_flag: {user.del_flag}")
         logger.info(f"Hash en BD: {user.contraseña}")
         
-        # Autenticar usuario
         authenticated_user = authenticate_user(db, login_data.correo, login_data.contraseña)
         if not authenticated_user:
             logger.error(f"Autenticación fallida para {login_data.correo}")
@@ -97,7 +89,6 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # Verificar aprobación
         if not user.aprobacion:
             logger.error(f"Usuario {login_data.correo} no aprobado")
             raise HTTPException(
@@ -105,7 +96,6 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
                 detail="User account not approved",
             )
             
-        # Crear token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": str(user.id)}, expires_delta=access_token_expires
@@ -143,7 +133,6 @@ async def debug_users(db: Session = Depends(get_db)):
         for u in users
     ]
 
-# Endpoint para probar verificación de contraseña
 @router.post("/debug/verify-password")
 async def debug_verify_password(email: str, password: str, db: Session = Depends(get_db)):
     """Endpoint para debug - probar verificación de contraseña"""

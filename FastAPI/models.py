@@ -47,6 +47,7 @@ class Usuario(Base):
     direccion = relationship('Direccion', back_populates='usuarios')
     donaciones = relationship('Donacion', back_populates='usuario')
     beneficios_eventos = relationship('BeneficiarioEvento', back_populates='beneficiario')
+    donaciones_eventos = relationship('DonanteEvento', back_populates='donante')
 
 class Estado(Base):
     __tablename__ = 'estados'
@@ -196,6 +197,7 @@ class Evento(Base):
     estatus = relationship('EstatusG', back_populates='eventos')
     entregas = relationship('Entrega', back_populates='evento')
     beneficiarios = relationship('BeneficiarioEvento', back_populates='evento')
+    donantes = relationship('DonanteEvento', back_populates='evento')
 
 class Entrega(Base):
     __tablename__ = 'entregas'
@@ -239,3 +241,14 @@ class BeneficiarioEvento(Base):
     
     evento = relationship('Evento', back_populates='beneficiarios')
     beneficiario = relationship('Usuario', back_populates='beneficios_eventos')
+
+class DonanteEvento(Base):
+    __tablename__ = 'donantesEventos'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    del_flag = Column('del', Boolean, default=False)
+    evento_id = Column(Integer, ForeignKey('eventos.id'))
+    donante_id = Column(Integer, ForeignKey('usuarios.id'))
+    
+    evento = relationship('Evento', back_populates='donantes')
+    donante = relationship('Usuario', back_populates='donaciones_eventos')

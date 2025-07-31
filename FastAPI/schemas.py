@@ -64,10 +64,35 @@ class UsuarioUpdate(BaseModel):
     direccion_id: Optional[int] = None
     aprobacion: Optional[bool] = None
 
+class BeneficiarioEventoResponse(BaseModel):
+    id: int
+    del_flag: bool
+    evento_id: int
+    beneficiario_id: int
+
+    class Config:
+        from_attributes = True
+
+class DonanteEventoBase(BaseModel):
+    evento_id: int
+    donante_id: int
+
+class DonanteEventoCreate(DonanteEventoBase):
+    pass
+
+class DonanteEventoResponse(DonanteEventoBase):
+    id: int
+    del_flag: bool
+
+    class Config:
+        from_attributes = True
+
 class UsuarioResponse(UsuarioBase):
     id: int
     del_flag: bool
     rol: Optional[RolResponse] = None
+    beneficios_eventos: List[BeneficiarioEventoResponse] = []
+    donaciones_eventos: List[DonanteEventoResponse] = []
     
     class Config:
         from_attributes = True
@@ -150,6 +175,8 @@ class EventoCreate(EventoBase):
 class EventoResponse(EventoBase):
     id: int
     del_flag: bool
+    beneficiarios: List[BeneficiarioEventoResponse] = []
+    donantes: List[DonanteEventoResponse] = []
     
     class Config:
         from_attributes = True
