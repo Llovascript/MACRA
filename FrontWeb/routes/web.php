@@ -19,3 +19,28 @@ Route::middleware(['auth.check'])->group(function () {
 
 // Ruta de logout (sin middleware porque necesita limpiar la sesión)
 Route::post('/logout', [UserController::class, 'logout'])->name('logout');
+
+// Rutas Admministrador
+// Menú admin
+Route::get('/menuAdmin', function () {
+    return view('menuAdmin');
+})->name('admin.menu');
+
+// Administración de Solicitudes
+Route::get('/adminSolicitudes', function () {
+    return view('adminSolicitudes');
+})->name('solicitudes');
+
+
+// Rutas Beneficiario
+// Menú beneficiario
+Route::get('/menuBeneficiario', function () {
+    return view('menuBeneficiario');
+})->name('beneficiario.menu');
+
+
+// Rutas Donadores
+// Menú beneficiario
+Route::get('/menuDonantes', function () {
+    return view('menuDonantes');
+})->name('donante.menu');

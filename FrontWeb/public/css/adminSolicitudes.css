@@ -1,0 +1,264 @@
+/* Reset y estilos base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+/* Container principal */
+.admin-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.admin-header {
+    background: white;
+    padding: 20px 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Botón de regreso */
+.back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #e5e7eb;
+    transform: translateX(-2px);
+}
+
+.back-icon {
+    width: 24px;
+    height: 24px;
+    color: #374151;
+}
+
+/* Título de la página */
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    flex: 1;
+}
+
+/* Contenido principal */
+.main-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+/* Container de módulos */
+.modules-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    max-width: 900px;
+    width: 100%;
+}
+
+/* Tarjetas de módulos */
+.module-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 2px solid #fed7aa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.module-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border-color: #fb923c;
+}
+
+.module-card:hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.05), rgba(239, 68, 68, 0.05));
+    pointer-events: none;
+}
+
+/* Contenido del módulo */
+.module-content {
+    padding: 30px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    width: 100%;
+}
+
+/* Iconos de módulos */
+.module-icon {
+    margin-bottom: 20px;
+}
+
+.icon-img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    transition: transform 0.3s ease;
+}
+
+.module-card:hover .icon-img {
+    transform: scale(1.1);
+}
+
+/* Títulos de módulos */
+.module-content h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #1f2937;
+    transition: color 0.3s ease;
+}
+
+.module-card:hover .module-content h3 {
+    color: #ea580c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-header {
+        padding: 15px 20px;
+    }
+    
+    .page-title {
+        font-size: 1.6rem;
+    }
+    
+    .back-btn {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .back-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .main-content {
+        padding: 40px 15px;
+    }
+    
+    .modules-container {
+        grid-template-columns: 1fr;
+        gap: 25px;
+        max-width: 400px;
+    }
+    
+    .module-card {
+        min-height: 180px;
+    }
+    
+    .module-content {
+        padding: 25px;
+    }
+    
+    .icon-img {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .module-content h3 {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 1.4rem;
+    }
+    
+    .modules-container {
+        max-width: 300px;
+    }
+    
+    .module-card {
+        min-height: 160px;
+    }
+    
+    .module-content {
+        padding: 20px;
+    }
+    
+    .icon-img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .module-content h3 {
+        font-size: 1.2rem;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.module-card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.module-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.module-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.module-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+/* Efecto de pulso para el botón de regreso */
+.back-btn:active {
+    transform: translateX(-1px) scale(0.95);
+}
