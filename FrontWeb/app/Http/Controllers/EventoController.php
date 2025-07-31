@@ -133,4 +133,44 @@ class EventoController extends Controller
 
         return back()->withErrors(['error' => 'Error actualizando evento.'])->withInput();
     }
+
+    // NUEVO: Mostrar eventos disponibles para usuarios beneficiarios
+    public function verEventosDisponibles()
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos");
+            $eventos = $response->json();
+
+            return view('usuario.eventos_disponibles', compact('eventos'));
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'No se pudieron cargar los eventos.']);
+        }
+    }
+
+    // NUEVO: Unirse como beneficiario a un evento
+    public function unirseEvento($id)
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->post("{$this->apiBaseUrl}/eventos/{$id}/unirse_como_beneficiario");
+
+            if ($response->successful()) {
+                return redirect()->route('eventos.usuario')->with('success', 'Te uniste correctamente al evento.');
+            } else {
+                $detalle = $response->json()['detail'] ?? 'Error';
+                return back()->withErrors(['error' => "No se pudo unir al evento: $detalle"]);
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al conectar con la API.']);
+        }
+    }
 }

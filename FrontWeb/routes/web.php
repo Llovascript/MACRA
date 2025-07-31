@@ -17,7 +17,7 @@ Route::post('/auth/register', [UserController::class, 'register'])->name('api.re
 Route::middleware(['auth.check'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
 
-    // Rutas para eventos
+    // Rutas para administración de eventos (admin)
     Route::prefix('admin/eventos')->group(function () {
         Route::get('/', [EventoController::class, 'menu'])->name('admin.eventos.menu');
         Route::get('/crear', [EventoController::class, 'create'])->name('admin.eventos.create');
@@ -28,6 +28,10 @@ Route::middleware(['auth.check'])->group(function () {
         Route::get('/{id}/editar', [EventoController::class, 'edit'])->name('admin.eventos.edit');
         Route::post('/{id}/actualizar', [EventoController::class, 'update'])->name('admin.eventos.update');
     });
+
+    // ✅ Rutas para beneficiarios (fuera del prefijo de admin)
+    Route::get('/eventos/usuario', [EventoController::class, 'verEventosDisponibles'])->name('eventos.usuario');
+    Route::post('/eventos/unirse/{id}', [EventoController::class, 'unirseEvento'])->name('eventos.unirse');
 });
 
 // Ruta para logout
