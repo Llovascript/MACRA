@@ -29,7 +29,12 @@ def read_root():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5001", "http://127.0.0.1:5001"],
+    allow_origins=[
+        "http://localhost:8000",    # Laravel
+        "http://127.0.0.1:8000",   # Laravel alternativo
+        "http://localhost:5001",    # FastAPI
+        "http://127.0.0.1:5001"    # FastAPI alternativo
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,8 +57,6 @@ async def startup_event():
         if db.query(Rol).count() == 0:
             default_roles = [
                 Rol(nombre="admin"),
-                Rol(nombre="usuario"),
-                Rol(nombre="moderador"),
                 Rol(nombre="donante"),
                 Rol(nombre="beneficiario")
             ]

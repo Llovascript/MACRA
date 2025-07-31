@@ -11,7 +11,7 @@ router = APIRouter(prefix="/entregas", tags=["entregas"])
 def create_entrega(
     entrega: EntregaCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     paquete = db.query(Paquete).filter(Paquete.id == entrega.paquete_id).first()
     if not paquete:

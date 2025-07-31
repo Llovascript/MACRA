@@ -37,7 +37,7 @@ Contiene todos los endpoints organizados por funcionalidad:
 - Instalar todas las dependencias
     pip install -r requirements.txt
 
-- Actualizar en caso de ser necesario
+- Actualizar en caso de ser necesario y tener las dependencias listas
     pip install -r requirements.txt --upgrade
 
 4.- EJECUCION DE LA API
@@ -51,8 +51,8 @@ http://127.0.0.1:8000/docs
 LARAVEL
 
 NOTAS:
-- laravel aun no esta conectado a los endpoints para el login se trabajara en este tiempo
-- importante no hacer migraciones aun
+- laravel esta conectado pero faltan los demas endpoints solo esta al login y al register
+- importante no hacer migraciones, por nada
 
 PASOS
 
@@ -68,3 +68,26 @@ PASOS
 - dentro de services se creo un archivo llamado FastApiService.php el cual contiene las reglas de servicio de comunicacion con la api
 
 nota: a momento solo se ha generado las reglas de comunicacion con login y registro, aun no hay estilos ni front de login y registro
+
+
+para conectar el .env a la api 
+
+debajo de la linea que dice "APP_URL=http://localhost"
+
+colocar estas 2 lineas
+
+FASTAPI_URL=http://localhost:5001
+FASTAPI_TOKEN=
+
+DESPUES PARA LA CONEXION A LA BD 
+
+sustituir las 2 primeras lineas de la conexiona bd(son todas las que inician sus variables con "BD") por estas 2 lineas
+
+DB_CONNECTION=sqlite
+DB_DATABASE=../FastAPI/usuarios.db
+
+comentar todas estas
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_USERNAME=root
+# DB_PASSWORD=
