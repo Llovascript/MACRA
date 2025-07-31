@@ -57,7 +57,7 @@ export default function AdminDashboard() {
     {
       title: "Eventos",
       icon: "calendar",
-      onPress: () => Alert.alert("Eventos", "Funcionalidad en desarrollo"),
+      onPress: () => router.push("/dashboard/admin/eventos"),
     },
     {
       title: "Donantes",
