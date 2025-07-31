@@ -10,19 +10,19 @@ class EventoController extends Controller
 {
     private $apiBaseUrl = 'http://127.0.0.1:5001';
 
-    // Mostrar menú principal de eventos
+    // Menú principal
     public function menu()
     {
         return view('admin.eventos.menu_eventos');
     }
 
-    // Mostrar formulario para crear evento
+    // Formulario para crear evento
     public function create()
     {
         return view('admin.eventos.crear_evento');
     }
 
-    // Guardar evento enviándolo a la API FastAPI
+    // Guardar evento en la API
     public function store(Request $request)
     {
         $request->validate([
@@ -38,27 +38,15 @@ class EventoController extends Controller
             return redirect()->route('login')->withErrors(['error' => 'No autenticado. Por favor, inicia sesión.']);
         }
 
-        $data = [
-            'nombre' => $request->input('nombre'),
-            'fechaIn' => $request->input('fechaIn'),
-            'fechaTer' => $request->input('fechaTer'),
-            'descripcion' => $request->input('descripcion'),
-            'estatus_id' => $request->input('estatus_id'),
-        ];
+        $data = $request->only(['nombre', 'fechaIn', 'fechaTer', 'descripcion', 'estatus_id']);
 
         try {
-            $response = Http::withToken($token)
-                ->post($this->apiBaseUrl . '/eventos', $data);
+            $response = Http::withToken($token)->post("{$this->apiBaseUrl}/eventos", $data);
 
             if ($response->successful()) {
                 return redirect()->route('admin.eventos.create')->with('success', 'Evento creado correctamente.');
             } else {
                 $error = $response->json()['detail'] ?? 'Error desconocido';
-
-                if (is_array($error)) {
-                    $error = json_encode($error);
-                }
-
                 return back()->withErrors(['api_error' => "API: $error"])->withInput();
             }
         } catch (\Exception $e) {
@@ -66,15 +54,83 @@ class EventoController extends Controller
         }
     }
 
-    // Menú para actualizar eventos (vista básica por ahora)
-    public function menuActualizar()
+    // Mostrar vista de gestión de eventos (listar todos)
+    public function manage()
     {
-        return view('admin.eventos.menu_actualizar');
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos");
+            $eventos = $response->json();
+
+            return view('admin.eventos.eventos_manage', compact('eventos'));
+        } catch (\Exception $e) {
+            return redirect()->route('admin.eventos.menu')->with('error', 'No se pudieron obtener los eventos.');
+        }
     }
 
-    // Menú para eliminar eventos (vista básica por ahora)
-    public function menuEliminar()
+    // Eliminar un evento
+    public function destroy($id)
     {
-        return view('admin.eventos.menu_eliminar');
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        $response = Http::withToken($token)->delete("{$this->apiBaseUrl}/eventos/{$id}");
+
+        if ($response->successful()) {
+            return redirect()->route('admin.eventos.manage')->with('success', 'Evento eliminado correctamente.');
+        }
+
+        return redirect()->route('admin.eventos.manage')->with('error', 'No se pudo eliminar el evento.');
+    }
+
+    // Formulario para editar evento
+    public function edit($id)
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos");
+
+        $evento = collect($response->json())->firstWhere('id', $id);
+
+        if (!$evento) {
+            return redirect()->route('admin.eventos.manage')->with('error', 'Evento no encontrado.');
+        }
+
+        return view('admin.eventos.editar_evento', compact('evento'));
+    }
+
+    // Actualizar evento en la API
+    public function update(Request $request, $id)
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        $data = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'fechaIn' => 'required|date',
+            'fechaTer' => 'required|date|after_or_equal:fechaIn',
+            'descripcion' => 'required|string|max:255',
+            'estatus_id' => 'required|integer',
+        ]);
+
+        $response = Http::withToken($token)
+            ->put("{$this->apiBaseUrl}/eventos/{$id}", $data);
+
+        if ($response->successful()) {
+            return redirect()->route('admin.eventos.manage')->with('success', 'Evento actualizado correctamente.');
+        }
+
+        return back()->withErrors(['error' => 'Error actualizando evento.'])->withInput();
     }
 }

@@ -6,7 +6,7 @@ use App\Http\Controllers\EventoController;
 
 // Rutas públicas: login y registro
 Route::get('/', [UserController::class, 'showLoginRegister'])->name('home');
-Route::get('/login', [UserController::class, 'showLoginRegister'])->name('login'); // Esta es importante
+Route::get('/login', [UserController::class, 'showLoginRegister'])->name('login');
 Route::get('/login/register', [UserController::class, 'showLoginRegister'])->name('login.register');
 
 // Rutas API para autenticación (JavaScript)
@@ -23,8 +23,10 @@ Route::middleware(['auth.check'])->group(function () {
         Route::get('/crear', [EventoController::class, 'create'])->name('admin.eventos.create');
         Route::post('/crear', [EventoController::class, 'store'])->name('admin.eventos.store');
 
-        Route::get('/actualizar', [EventoController::class, 'menuActualizar'])->name('admin.eventos.menu_actualizar');
-        Route::get('/eliminar', [EventoController::class, 'menuEliminar'])->name('admin.eventos.menu_eliminar');
+        Route::get('/gestionar', [EventoController::class, 'manage'])->name('admin.eventos.manage');
+        Route::delete('/{id}', [EventoController::class, 'destroy'])->name('admin.eventos.destroy');
+        Route::get('/{id}/editar', [EventoController::class, 'edit'])->name('admin.eventos.edit');
+        Route::post('/{id}/actualizar', [EventoController::class, 'update'])->name('admin.eventos.update');
     });
 });
 

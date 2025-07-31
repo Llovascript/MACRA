@@ -64,6 +64,28 @@ def update_evento(
         db.rollback()
         raise HTTPException(status_code=400, detail="Error actualizando evento")
 
+@router.delete("/{evento_id}")
+def delete_evento(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+):
+    evento = db.query(Evento).filter(
+        Evento.id == evento_id,
+        Evento.del_flag == False
+    ).first()
+
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento no encontrado")
+
+    try:
+        evento.del_flag = True
+        db.commit()
+        return {"message": "Evento eliminado correctamente"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Error al eliminar el evento")
+
 @router.post("/{evento_id}/beneficiarios/{beneficiario_id}")
 def add_beneficiario(
     evento_id: int,
