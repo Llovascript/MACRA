@@ -7,10 +7,12 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" /> {/* La pantalla de bienvenida */}
-        <Stack.Screen name="login" /> {/* La pantalla de login */}
-        <Stack.Screen name="register" /> {/* La pantalla de registro */}
-        {/* Puedes añadir más pantallas aquí */}
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="register" />
+        <Stack.Screen name="dashboard/admin" />
+        <Stack.Screen name="dashboard/donante" />
+        <Stack.Screen name="dashboard/beneficiario" />
       </Stack>
     </SafeAreaProvider>
   )

@@ -1,6 +1,6 @@
 import { Constants } from "expo-constants";
 
-const FASTAPI_DEV_BASE_URL = 'http://10.179.124.163:5001';
+const FASTAPI_DEV_BASE_URL = 'http://192.168.100.4:5001';
 
 export const generateFastApiUrl = (relativePath: string) => {
     const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;

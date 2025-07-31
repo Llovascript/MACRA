@@ -1,19 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image, // Eliminamos ImageBackground
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from "react-native"
+import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native"
 import { Link, useRouter } from "expo-router"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { generateFastApiUrl } from "@/utils"
+import { generateFastApiUrl } from "../utils"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 import FondoImage from "../assets/images/fondo.jpg"
@@ -47,9 +38,62 @@ export default function LoginScreen() {
       const data = await response.json()
 
       if (response.ok) {
+        // Guardar el token
         await AsyncStorage.setItem("userToken", data.access_token)
-        Alert.alert("Éxito", "Inicio de sesión exitoso!")
-        router.replace("/(tabs)")
+
+        // Obtener información del usuario para determinar su rol
+        const userInfoUrl = generateFastApiUrl("/auth/me")
+        const userResponse = await fetch(userInfoUrl, {
+          headers: {
+            Authorization: `Bearer ${data.access_token}`,
+          },
+        })
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+
+          // Verificar si el usuario está aprobado
+          if (!userData.aprobacion) {
+            Alert.alert(
+              "Cuenta Pendiente de Aprobación",
+              "Tu cuenta aún está siendo revisada por un administrador. Te notificaremos cuando sea aprobada.",
+              [
+                {
+                  text: "Entendido",
+                  onPress: async () => {
+                    // Limpiar token ya que no puede acceder
+                    await AsyncStorage.removeItem("userToken")
+                    router.replace("/")
+                  },
+                },
+              ],
+            )
+            return
+          }
+
+          // Guardar información del usuario
+          await AsyncStorage.setItem("userData", JSON.stringify(userData))
+
+          Alert.alert("Éxito", "Inicio de sesión exitoso!")
+
+          // Redirigir al dashboard correspondiente según el rol
+          switch (userData.rol_id) {
+            case 1: // admin
+              router.replace("/dashboard/admin")
+              break
+            case 4: // donante
+              router.replace("/dashboard/donante")
+              break
+            case 5: // beneficiario
+              router.replace("/dashboard/beneficiario")
+              break
+            default:
+              router.replace("/dashboard/usuario") // fallback
+              break
+          }
+        } else {
+          Alert.alert("Error", "No se pudo obtener la información del usuario.")
+        }
       } else {
         Alert.alert("Error de inicio de sesión", data.detail || "Credenciales incorrectas.")
       }
