@@ -57,8 +57,6 @@ async def startup_event():
         if db.query(Rol).count() == 0:
             default_roles = [
                 Rol(nombre="admin"),
-                Rol(nombre="usuario"),
-                Rol(nombre="moderador"),
                 Rol(nombre="donante"),
                 Rol(nombre="beneficiario")
             ]
