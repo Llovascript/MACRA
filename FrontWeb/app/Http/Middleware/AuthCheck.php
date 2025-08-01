@@ -31,13 +31,13 @@ class AuthCheck
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             
-            return redirect()->route('login.register')->with('error', 'Debes iniciar sesión para acceder a esta página.');
+            return redirect()->route('login')->with('error', 'Debes iniciar sesión para acceder a esta página.');
         }
 
         $token = Session::get('access_token');
         Log::info('Token encontrado', ['token_preview' => substr($token, 0, 20) . '...']);
 
-        // Opcional: Verificar si el token no ha expirado haciendo una petición a FastAPI
+        // Verificar si el token no ha expirado haciendo una petición a FastAPI
         try {
             $response = \Illuminate\Support\Facades\Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token
@@ -53,7 +53,7 @@ class AuthCheck
                     return response()->json(['error' => 'Token expired'], 401);
                 }
                 
-                return redirect()->route('login.register')->with('error', 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+                return redirect()->route('login')->with('error', 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
             }
 
             Log::info('Token válido, permitiendo acceso');
@@ -61,7 +61,7 @@ class AuthCheck
         } catch (\Exception $e) {
             Log::error('Error verificando token', ['error' => $e->getMessage()]);
             // En caso de error de conexión, permitir el acceso (opcional)
-            // return redirect()->route('login.register')->with('error', 'Error de conexión con el servidor.');
+            // return redirect()->route('login')->with('error', 'Error de conexión con el servidor.');
         }
 
         return $next($request);
