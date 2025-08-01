@@ -29,6 +29,21 @@ Route::get('/adminSolicitudes', function () {
     return view('adminSolicitudes');
 })->name('adminSolicitudes');
 
+//ruta para agregar beneficiario
+Route::get('/agregarBeneficiario', function () {
+    return view('agregarBeneficiario');
+})->name('agregarBeneficiario');
+
+//ruta para actualizar beneficiario
+Route::get('/actualizarBeneficiario', function () {
+    return view('actualizarBeneficiario');
+})->name('actualizarBeneficiario');
+
+//Ruta para eliminar beneficiario
+Route::get('/eliminarBeneficiario', function () {
+    return view('eliminarBeneficiario');
+})->name('eliminarBeneficiario');
+
 
 // Rutas Beneficiario
 Route::get('/menuBeneficiario', function () {
@@ -39,6 +54,30 @@ Route::get('/perfilBeneficiario', function () {
     return view('perfilBeneficiario');
 })->name('perfilBeneficiario');
 
+//ruta adminBeneficiario
+Route::get('/adminBeneficiario', function () {
+    return view('adminBeneficiarios');
+})->name('adminBeneficiarios');
+
+//ruta para agregar donante
+Route::get('/agregarDonante', function () {
+    return view('agregarDonante');
+})->name('agregarDonante');
+
+//ruta para actualizar donante
+Route::get('/actualizarDonante', function () {
+    return view('actualizarDonante');
+})->name('actualizarDonante');
+
+//ruta para eliminar donante
+Route::get('/eliminarDonante', function () {
+    return view('eliminarDonante');
+})->name('eliminarDonante');
+
+
+
+
+
 
 // Rutas Donadores
 Route::get('/menuDonantes', function () {
@@ -48,3 +87,9 @@ Route::get('/menuDonantes', function () {
 Route::get('/perfilDonante', function () {
     return view('perfilDonante');
 })->name('perfilDonante');
+
+//ruta adminDonante
+Route::get('/adminDonante', function () {
+    return view('adminDonantes');
+})->name('adminDonante');
+
