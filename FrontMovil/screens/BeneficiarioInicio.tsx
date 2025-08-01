@@ -10,7 +10,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
-const MenuBeneficiario = ({ navigation }) => {
+const BeneficiarioInicio = ({ navigation }) => {
   const handleLogout = () => {
     // Lógica para cerrar sesión
     console.log('Cerrando sesión...');
