@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administración de Beneficiarios</title>
-    <link rel="stylesheet" href="{{ asset('css/admin-menu.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crudUsuarios.css') }}">
 </head>
 <body>
     <div class="admin-container">
@@ -25,24 +25,24 @@
             <div class="menu-grid">
                 <!-- Agregar Beneficiario -->
                 <div class="menu-card" onclick="window.location.href='{{ route('agregarBeneficiario') }}'">
-                    <div class="card-icon">
-                        <img src="{{ asset('images/agregar.png') }}" alt="Agregar">
+                    <div class="card-icon agregar">
+                        <img src="{{ asset('images/agregar.png') }}" alt="Agregar" class="icon-image">
                     </div>
                     <h3 class="card-title">Agregar</h3>
                 </div>
 
                 <!-- Actualizar Beneficiario -->
                 <div class="menu-card" onclick="window.location.href='{{ route('actualizarBeneficiario') }}'">
-                    <div class="card-icon">
-                        <img src="{{ asset('images/actualizar.png') }}" alt="Actualizar">
+                    <div class="card-icon actualizar">
+                        <img src="{{ asset('images/actualizar.png') }}" alt="Actualizar" class="icon-image">
                     </div>
                     <h3 class="card-title">Actualizar</h3>
                 </div>
 
                 <!-- Eliminar Beneficiario -->
                 <div class="menu-card" onclick="window.location.href='{{ route('eliminarBeneficiario') }}'">
-                    <div class="card-icon">
-                        <img src="{{ asset('images/eliminar.png') }}" alt="Eliminar">
+                    <div class="card-icon eliminar">
+                        <img src="{{ asset('images/eliminar.png') }}" alt="Eliminar" class="icon-image">
                     </div>
                     <h3 class="card-title">Eliminar</h3>
                 </div>

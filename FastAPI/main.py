@@ -12,6 +12,8 @@ from endpoints.eventos_endpoints import router as eventos_router
 from endpoints.articulos_endpoints import router as articulos_router
 from endpoints.paquetes_endpoints import router as paquetes_router
 from endpoints.entregas_endpoints import router as entregas_router
+from endpoints.admin_endpoints import router as admin_router
+
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -49,6 +51,7 @@ app.include_router(eventos_router)
 app.include_router(articulos_router)
 app.include_router(paquetes_router)
 app.include_router(entregas_router)
+app.include_router(admin_router)
 
 @app.on_event("startup")
 async def startup_event():

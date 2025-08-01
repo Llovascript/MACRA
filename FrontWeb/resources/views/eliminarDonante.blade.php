@@ -4,31 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eliminar Donante</title>
-    <link rel="stylesheet" href="{{ asset('css/perfil.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crudUsuarios.css') }}">
 </head>
 <body>
-    <div class="perfil-container">
+    <div class="crud-container">
         <!-- Header -->
-        <div class="perfil-header">
+        <div class="crud-header">
             <button class="back-btn" onclick="window.location.href='{{ route('adminDonante') }}'">
                 <svg class="back-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" />
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </button>
             <h1 class="page-title">Eliminar Donante</h1>
         </div>
 
-        <!-- Search Section -->
-        <div class="main-content">
+        <!-- Contenido principal -->
+        <div class="crud-content">
+            <!-- Sección de búsqueda -->
             <div class="search-container">
                 <div class="search-section">
-                    <h2 class="section-title">Buscar</h2>
+                    <h2>Buscar Donante</h2>
                     <div class="search-row">
                         <div class="search-group">
-                            <input type="text" id="buscar" name="buscar" 
-                                class="form-input search-input" 
-                                placeholder="Ingrese nombre, email, teléfono o RFC...">
+                            <input type="text" id="buscar" name="buscar" class="search-input" 
+                                   placeholder="Ingrese nombre, email o teléfono...">
                         </div>
                         <button type="button" class="btn-search" onclick="buscarDonante()">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -38,40 +37,108 @@
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Results Section -->
-                <div class="results-section" id="resultados" style="display: none;">
-                    <h3 class="results-title">Resultados de búsqueda:</h3>
-                    <div class="results-list" id="listaResultados">
-                        <!-- Los resultados se cargarán aquí dinámicamente -->
-                    </div>
+            <!-- Resultados de búsqueda -->
+            <div class="results-section" id="resultados" style="display: none;">
+                <h3 class="results-title">Resultados de búsqueda:</h3>
+                <div class="results-list" id="listaResultados">
+                    <!-- Los resultados se cargarán dinámicamente -->
                 </div>
             </div>
 
-            <!-- Confirmation Section (Hidden initially) -->
+            <!-- Confirmación de eliminación (oculto inicialmente) -->
             <div class="form-container delete-confirmation" id="confirmacionEliminacion" style="display: none;">
-                <div class="form-section">
-                    <div class="delete-warning">
-                        <div class="warning-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" 
-                                      stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h2 class="warning-title">¿Está seguro de eliminar este donante?</h2>
-                        <p class="warning-text">Esta acción no se puede deshacer. Todos los datos del donante serán eliminados permanentemente.</p>
+                <div class="delete-warning">
+                    <div class="warning-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" 
+                                  stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h2 class="warning-title">¿Está seguro de eliminar este donante?</h2>
+                    <p class="warning-text">Esta acción no se puede deshacer. Todos los datos del donante serán eliminados permanentemente.</p>
+                </div>
+
+                <!-- Formulario de datos readonly -->
+                <div class="form-grid">
+                    <!-- Nombre -->
+                    <div class="form-field">
+                        <div class="field-icon icon-user"></div>
+                        <input type="text" id="nombre" class="form-input" readonly>
                     </div>
 
-                    <!-- Información del donante a eliminar -->
-                    <div class="donante-info" id="infoDonante">
-                        <!-- Se llenará dinámicamente -->
+                    <!-- Página web -->
+                    <div class="form-field">
+                        <div class="field-icon icon-globe"></div>
+                        <input type="text" id="pagina_web" class="form-input" readonly>
                     </div>
 
-                    <!-- Botones de confirmación -->
-                    <div class="delete-actions">
-                        <button type="button" class="btn-cancel" onclick="cancelarEliminacion()">Cancelar</button>
-                        <button type="button" class="btn-delete" onclick="confirmarEliminacion()">Eliminar</button>
+                    <!-- Apellido Paterno -->
+                    <div class="form-field">
+                        <div class="field-icon icon-user"></div>
+                        <input type="text" id="apellido_paterno" class="form-input" readonly>
                     </div>
+
+                    <!-- Correo electrónico -->
+                    <div class="form-field">
+                        <div class="field-icon icon-mail"></div>
+                        <input type="email" id="correo" class="form-input" readonly>
+                    </div>
+
+                    <!-- Apellido Materno -->
+                    <div class="form-field">
+                        <div class="field-icon icon-user"></div>
+                        <input type="text" id="apellido_materno" class="form-input" readonly>
+                    </div>
+
+                    <!-- Contraseña (oculta) -->
+                    <div class="form-field">
+                        <div class="field-icon icon-lock"></div>
+                        <input type="password" class="form-input" value="••••••••" readonly>
+                    </div>
+
+                    <!-- Edad -->
+                    <div class="form-field">
+                        <div class="field-icon icon-calendar"></div>
+                        <input type="text" id="edad" class="form-input" readonly>
+                    </div>
+
+                    <!-- Campo vacío para simetría -->
+                    <div class="form-field">
+                        <div class="field-icon icon-lock"></div>
+                        <input type="password" class="form-input" value="••••••••" readonly>
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="form-field">
+                        <div class="field-icon icon-phone"></div>
+                        <input type="tel" id="telefono" class="form-input" readonly>
+                    </div>
+
+                    <!-- Tipo de entidad -->
+                    <div class="form-field">
+                        <div class="field-icon icon-building"></div>
+                        <input type="text" id="tipo" class="form-input" readonly>
+                    </div>
+
+                    <!-- RFC -->
+                    <div class="form-field">
+                        <div class="field-icon icon-card"></div>
+                        <input type="text" id="rfc" class="form-input" readonly>
+                    </div>
+
+                    <!-- Tipo de perfil -->
+                    <div class="form-field">
+                        <div class="field-icon icon-profile"></div>
+                        <input type="text" class="form-input" value="Donante" readonly>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="form-actions">
+                    <button type="button" class="btn-reset" onclick="cancelarEliminacion()">Cancelar</button>
+                    <button type="button" class="btn-delete" onclick="confirmarEliminacion()" id="deleteBtn">Eliminar</button>
                 </div>
             </div>
         </div>
@@ -80,32 +147,28 @@
     <script>
         let donanteSeleccionado = null;
 
-        function buscarDonante() {
+        async function buscarDonante() {
             const query = document.getElementById('buscar').value.trim();
             if (query.length < 2) {
                 alert('Por favor, ingrese al menos 2 caracteres para buscar.');
                 return;
             }
 
-            // Simular búsqueda (aquí se conectaría con FastAPI)
-            const resultadosMock = [
-                {
-                    id: 1,
-                    nombre: 'Carlos Ramírez Sánchez',
-                    email: 'carlos.ramirez@empresa.com',
-                    telefono: '442-555-0123',
-                    rfc: 'RASC850215ABC'
-                },
-                {
-                    id: 2,
-                    nombre: 'Ana Patricia Morales',
-                    email: 'ana.morales@company.com',
-                    telefono: '442-555-0456',
-                    rfc: 'MORA920312XYZ'
+            try {
+                // Llamada real a la API de Laravel que se conecta con FastAPI
+                const response = await fetch(`{{ route('donantes.search') }}?q=${encodeURIComponent(query)}`);
+                
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda');
                 }
-            ];
-
-            mostrarResultados(resultadosMock);
+                
+                const resultados = await response.json();
+                mostrarResultados(resultados);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al realizar la búsqueda. Por favor, inténtelo nuevamente.');
+            }
         }
 
         function mostrarResultados(resultados) {
@@ -119,14 +182,14 @@
             } else {
                 resultados.forEach(donante => {
                     const item = document.createElement('div');
-                    item.className = 'result-item delete-item';
+                    item.className = 'result-item';
                     item.innerHTML = `
                         <div class="result-info">
-                            <h4>${donante.nombre}</h4>
-                            <p>${donante.email} | ${donante.telefono}</p>
-                            <p><strong>RFC:</strong> ${donante.rfc}</p>
+                            <h4>${donante.nombre} ${donante.aP || ''} ${donante.aM || ''}</h4>
+                            <p>${donante.correo} | ${donante.telefono}</p>
+                            <p><strong>Tipo:</strong> ${donante.tipo}</p>
                         </div>
-                        <button class="btn-delete-select" onclick="seleccionarParaEliminar(${JSON.stringify(donante).replace(/"/g, '&quot;')})">
+                        <button class="btn-delete" onclick="seleccionarParaEliminar(${donante.id})" style="padding: 0.5rem 1.5rem; font-size: 0.9rem;">
                             Eliminar
                         </button>
                     `;
@@ -137,49 +200,78 @@
             resultadosDiv.style.display = 'block';
         }
 
-        function seleccionarParaEliminar(donante) {
-            donanteSeleccionado = donante;
-            mostrarConfirmacion(donante);
+        async function seleccionarParaEliminar(id) {
+            try {
+                // Obtener datos completos del donante desde la API
+                const response = await fetch(`{{ url('/donantes/obtener') }}/${id}`);
+                
+                if (!response.ok) {
+                    throw new Error('Error al obtener los datos del donante');
+                }
+                
+                const datos = await response.json();
+                mostrarConfirmacion(datos);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar los datos del donante.');
+            }
         }
 
-        function mostrarConfirmacion(donante) {
-            const infoDiv = document.getElementById('infoDonante');
-            infoDiv.innerHTML = `
-                <div class="info-card">
-                    <h3>Información del Donante</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <strong>Nombre:</strong>
-                            <span>${donante.nombre}</span>
-                        </div>
-                        <div class="info-item">
-                            <strong>Email:</strong>
-                            <span>${donante.email}</span>
-                        </div>
-                        <div class="info-item">
-                            <strong>Teléfono:</strong>
-                            <span>${donante.telefono}</span>
-                        </div>
-                        <div class="info-item">
-                            <strong>RFC:</strong>
-                            <span>${donante.rfc}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
+        function mostrarConfirmacion(datos) {
+            donanteSeleccionado = datos;
 
+            // Llenar los campos readonly con los datos
+            document.getElementById('nombre').value = datos.nombre || '';
+            document.getElementById('apellido_paterno').value = datos.aP || '';
+            document.getElementById('apellido_materno').value = datos.aM || '';
+            document.getElementById('correo').value = datos.correo || '';
+            document.getElementById('telefono').value = datos.telefono || '';
+            document.getElementById('edad').value = datos.edad ? `${datos.edad} años` : '';
+            document.getElementById('rfc').value = datos.rfc || '';
+            document.getElementById('pagina_web').value = datos.paginaWeb || 'Sin página web';
+            document.getElementById('tipo').value = datos.tipo === 'persona' ? 'Persona' : 'Organización';
+
+            // Mostrar la confirmación
             document.getElementById('confirmacionEliminacion').style.display = 'block';
             document.getElementById('confirmacionEliminacion').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function confirmarEliminacion() {
+        async function confirmarEliminacion() {
             if (!donanteSeleccionado) return;
 
-            // Aquí se haría la llamada a FastAPI para eliminar
-            if (confirm('¿Está completamente seguro de eliminar este donante? Esta acción es irreversible.')) {
-                // Simular eliminación exitosa
-                alert('Donante eliminado exitosamente.');
-                window.location.href = '{{ route("adminDonante") }}';
+            if (confirm(`¿Está completamente seguro de eliminar a ${donanteSeleccionado.nombre}? Esta acción es irreversible.`)) {
+                const deleteBtn = document.getElementById('deleteBtn');
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = 'Eliminando...';
+
+                try {
+                    // Llamada real a la API para eliminar
+                    const response = await fetch(`{{ url('/eliminarDonante') }}/${donanteSeleccionado.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        alert('Donante eliminado exitosamente');
+                        window.location.href = '{{ route("adminDonante") }}';
+                    } else {
+                        alert(result.message || 'Error al eliminar el donante');
+                        deleteBtn.disabled = false;
+                        deleteBtn.textContent = 'Eliminar';
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al eliminar el donante. Por favor, inténtelo nuevamente.');
+                    deleteBtn.disabled = false;
+                    deleteBtn.textContent = 'Eliminar';
+                }
             }
         }
 
@@ -189,153 +281,80 @@
             document.getElementById('buscar').value = '';
             donanteSeleccionado = null;
         }
+
+        // Permitir búsqueda con Enter
+        document.getElementById('buscar').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarDonante();
+            }
+        });
     </script>
 
+    <!-- Meta tag para CSRF token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <style>
-        /* Estilos específicos para eliminar */
-        .delete-confirmation {
-            background: #fff5f5;
-            border: 2px solid #fed7d7;
+        /* Estilos específicos para campos readonly */
+        .form-input[readonly] {
+            background-color: #f1f3f4;
+            color: #5f6368;
+            cursor: not-allowed;
+        }
+
+        .form-input[readonly]:focus {
+            background-color: #f1f3f4;
+            box-shadow: none;
+        }
+
+        .result-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-info h4 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+
+        .result-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
         }
 
         .delete-warning {
             text-align: center;
-            padding: 2rem;
-            border-bottom: 1px solid #fed7d7;
-            margin-bottom: 2rem;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #fff5f5;
+            border-radius: 10px;
+            border: 1px solid #fed7d7;
         }
 
         .warning-icon {
-            margin-bottom: 1rem;
+            margin-bottom: 15px;
         }
 
         .warning-title {
             color: #dc3545;
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+            margin-bottom: 10px;
         }
 
         .warning-text {
-            color: #6c757d;
-            font-size: 1rem;
-            max-width: 500px;
-            margin: 0 auto;
-            line-height: 1.5;
-        }
-
-        .delete-item {
-            border-left: 4px solid #dc3545;
-        }
-
-        .btn-delete-select {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .btn-delete-select:hover {
-            background: #c82333;
-        }
-
-        .info-card {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border: 1px solid #e9ecef;
-        }
-
-        .info-card h3 {
-            margin-bottom: 1rem;
-            color: #333;
-            font-size: 1.25rem;
-        }
-
-        .info-grid {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #f8f9fa;
-        }
-
-        .info-item:last-child {
-            border-bottom: none;
-        }
-
-        .info-item strong {
-            color: #495057;
-            min-width: 120px;
-        }
-
-        .info-item span {
-            color: #333;
-            text-align: right;
-            flex: 1;
-        }
-
-        .delete-actions {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .btn-cancel {
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 2rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-
-        .btn-cancel:hover {
-            background: #5a6268;
-        }
-
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 2rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-
-        .btn-delete:hover {
-            background: #c82333;
-        }
-
-        @media (max-width: 768px) {
-            .delete-actions {
-                flex-direction: column;
-            }
-            
-            .info-item {
-                flex-direction: column;
-                gap: 0.25rem;
-            }
-            
-            .info-item span {
-                text-align: left;
-            }
+            color: #666;
         }
     </style>
 </body>

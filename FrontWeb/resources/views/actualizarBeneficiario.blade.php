@@ -4,31 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Actualizar Beneficiario</title>
-    <link rel="stylesheet" href="{{ asset('css/perfil.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crudUsuarios.css') }}">
 </head>
 <body>
-    <div class="perfil-container">
+    <div class="crud-container">
         <!-- Header -->
-        <div class="perfil-header">
+        <div class="crud-header">
             <button class="back-btn" onclick="window.location.href='{{ route('adminBeneficiarios') }}'">
                 <svg class="back-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" />
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </button>
             <h1 class="page-title">Actualizar Beneficiario</h1>
         </div>
 
-        <!-- Search Section -->
-        <div class="main-content">
+        <!-- Contenido principal -->
+        <div class="crud-content">
+            <!-- Sección de búsqueda -->
             <div class="search-container">
                 <div class="search-section">
-                    <h2 class="section-title">Buscar</h2>
+                    <h2>Buscar Beneficiario</h2>
                     <div class="search-row">
                         <div class="search-group">
-                            <input type="text" id="buscar" name="buscar" 
-                                class="form-input search-input" 
-                                placeholder="Ingrese nombre, email o teléfono...">
+                            <input type="text" id="buscar" name="buscar" class="search-input" 
+                                   placeholder="Ingrese nombre, email o teléfono...">
                         </div>
                         <button type="button" class="btn-search" onclick="buscarBeneficiario()">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -38,130 +37,155 @@
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Results Section -->
-                <div class="results-section" id="resultados" style="display: none;">
-                    <h3 class="results-title">Resultados de búsqueda:</h3>
-                    <div class="results-list" id="listaResultados">
-                        <!-- Los resultados se cargarán aquí dinámicamente -->
-                    </div>
+            <!-- Resultados de búsqueda -->
+            <div class="results-section" id="resultados" style="display: none;">
+                <h3 class="results-title">Resultados de búsqueda:</h3>
+                <div class="results-list" id="listaResultados">
+                    <!-- Los resultados se cargarán dinámicamente -->
                 </div>
             </div>
 
-            <!-- Form Section (Hidden initially) -->
+            <!-- Formulario de edición (oculto inicialmente) -->
             <div class="form-container" id="formularioEdicion" style="display: none;">
-                <form class="beneficiario-form" method="POST" action="">
+                <form id="beneficiarioForm" class="beneficiario-form" method="POST" action="">
                     @csrf
                     @method('PUT')
-                    <!-- Datos personales -->
-                    <div class="form-section">
-                        <h2 class="section-title">Datos personales</h2>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="nombre" class="form-label">Nombre completo:</label>
-                                <input type="text" id="nombre" name="nombre"
-                                    class="form-input beneficiario-field" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="email" class="form-label">Correo electrónico:</label>
-                                <input type="email" id="email" name="email"
-                                    class="form-input beneficiario-field" required>
-                            </div>
+                    <div class="form-grid">
+                        <!-- Nombre -->
+                        <div class="form-field">
+                            <div class="field-icon icon-user"></div>
+                            <input type="text" id="nombre" name="nombre" class="form-input" 
+                                   placeholder="Nombre" required>
+                            @error('nombre')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="telefono" class="form-label">Teléfono:</label>
-                                <input type="tel" id="telefono" name="telefono"
-                                    class="form-input beneficiario-field" required>
-                            </div>
+                        <!-- Página web (opcional) -->
+                        <div class="form-field">
+                            <div class="field-icon icon-globe"></div>
+                            <input type="url" id="pagina_web" name="paginaWeb" class="form-input" 
+                                   placeholder="Página web (opcional)">
+                            @error('paginaWeb')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
 
-                            <div class="form-group">
-                                <label for="rfc" class="form-label">RFC:</label>
-                                <input type="text" id="rfc" name="rfc"
-                                    class="form-input beneficiario-field" required>
-                            </div>
+                        <!-- Apellido Paterno -->
+                        <div class="form-field">
+                            <div class="field-icon icon-user"></div>
+                            <input type="text" id="apellido_paterno" name="aP" class="form-input" 
+                                   placeholder="Apellido Paterno">
+                            @error('aP')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Correo electrónico -->
+                        <div class="form-field">
+                            <div class="field-icon icon-mail"></div>
+                            <input type="email" id="correo" name="correo" class="form-input" 
+                                   placeholder="Correo electrónico" required>
+                            @error('correo')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                            @error('api')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Apellido Materno -->
+                        <div class="form-field">
+                            <div class="field-icon icon-user"></div>
+                            <input type="text" id="apellido_materno" name="aM" class="form-input" 
+                                   placeholder="Apellido Materno">
+                            @error('aM')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Contraseña (opcional para actualización) -->
+                        <div class="form-field">
+                            <div class="field-icon icon-lock"></div>
+                            <input type="password" id="contraseña" name="contraseña" class="form-input" 
+                                   placeholder="Nueva contraseña (opcional)">
+                            @error('contraseña')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Edad -->
+                        <div class="form-field">
+                            <div class="field-icon icon-calendar"></div>
+                            <input type="number" id="edad" name="edad" class="form-input" 
+                                   placeholder="Edad" min="1" max="120">
+                            @error('edad')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Confirmar contraseña -->
+                        <div class="form-field">
+                            <div class="field-icon icon-lock"></div>
+                            <input type="password" id="confirmar_contraseña" name="confirmar_contraseña" class="form-input" 
+                                   placeholder="Confirmar nueva contraseña">
+                            <span class="error-message" id="password-error" style="display: none;">Las contraseñas no coinciden</span>
+                        </div>
+
+                        <!-- Teléfono -->
+                        <div class="form-field">
+                            <div class="field-icon icon-phone"></div>
+                            <input type="tel" id="telefono" name="telefono" class="form-input" 
+                                   placeholder="Teléfono" required>
+                            @error('telefono')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Tipo de entidad -->
+                        <div class="form-field">
+                            <div class="field-icon icon-building"></div>
+                            <select id="tipo" name="tipo" class="form-select" required>
+                                <option value="">Tipo de entidad</option>
+                                <option value="persona">Persona</option>
+                                <option value="organizacion">Organización</option>
+                            </select>
+                            @error('tipo')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- RFC -->
+                        <div class="form-field">
+                            <div class="field-icon icon-card"></div>
+                            <input type="text" id="rfc" name="rfc" class="form-input" 
+                                   placeholder="RFC" maxlength="13">
+                            @error('rfc')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Tipo de perfil (fijo para beneficiario) -->
+                        <div class="form-field">
+                            <div class="field-icon icon-profile"></div>
+                            <input type="text" class="form-input" value="Beneficiario" readonly>
+                            <input type="hidden" name="rol_id" value="3">
                         </div>
                     </div>
 
-                    <!-- Dirección -->
-                    <div class="form-section">
-                        <h2 class="section-title">Dirección</h2>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="estado" class="form-label">Estado:</label>
-                                <select id="estado" name="estado" class="form-select beneficiario-field" required>
-                                    <option value="">Seleccione.....</option>
-                                    <option value="aguascalientes">Aguascalientes</option>
-                                    <option value="baja_california">Baja California</option>
-                                    <option value="queretaro">Querétaro</option>
-                                    <option value="cdmx">Ciudad de México</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="calle" class="form-label">Calle:</label>
-                                <select id="calle" name="calle" class="form-select beneficiario-field" required>
-                                    <option value="">Seleccione.....</option>
-                                    <option value="av_universidad">Av. Universidad</option>
-                                    <option value="corregidora">Corregidora</option>
-                                    <option value="constituyentes">Constituyentes</option>
-                                </select>
-                            </div>
+                    <!-- Mostrar errores generales -->
+                    @if($errors->has('error'))
+                        <div class="alert alert-danger">
+                            {{ $errors->first('error') }}
                         </div>
+                    @endif
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="municipio" class="form-label">Municipio:</label>
-                                <select id="municipio" name="municipio" class="form-select beneficiario-field" required>
-                                    <option value="">Seleccione.....</option>
-                                    <option value="queretaro">Querétaro</option>
-                                    <option value="corregidora">Corregidora</option>
-                                    <option value="el_marques">El Marqués</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="no_interior" class="form-label">No. Interior:</label>
-                                <input type="text" id="no_interior" name="no_interior"
-                                    class="form-input beneficiario-field" placeholder="5A">
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="colonia" class="form-label">Colonia:</label>
-                                <select id="colonia" name="colonia" class="form-select beneficiario-field" required>
-                                    <option value="">Seleccione.....</option>
-                                    <option value="centro">Centro</option>
-                                    <option value="loma_dorada">Loma Dorada</option>
-                                    <option value="juriquilla">Juriquilla</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="no_exterior" class="form-label">No. Exterior:</label>
-                                <input type="text" id="no_exterior" name="no_exterior"
-                                    class="form-input beneficiario-field" placeholder="123" required>
-                            </div>
-                        </div>
-
-                        <div class="form-row single-field">
-                            <div class="form-group">
-                                <label for="codigo_postal" class="form-label">Código Postal:</label>
-                                <input type="text" id="codigo_postal" name="codigo_postal"
-                                    class="form-input beneficiario-field" placeholder="76000" required>
-                            </div>
-                        </div>
-
-                        <!-- Botones -->
-                        <div class="save-section">
-                            <button type="button" class="btn-reset" onclick="cancelarEdicion()">Restablecer</button>
-                            <button type="submit" class="btn-save">Actualizar</button>
-                        </div>
+                    <!-- Botones de acción -->
+                    <div class="form-actions">
+                        <button type="button" class="btn-reset" onclick="cancelarEdicion()">Cancelar</button>
+                        <button type="submit" class="btn-submit" id="submitBtn">Actualizar</button>
                     </div>
                 </form>
             </div>
@@ -169,30 +193,30 @@
     </div>
 
     <script>
-        function buscarBeneficiario() {
+        let beneficiarioSeleccionado = null;
+
+        async function buscarBeneficiario() {
             const query = document.getElementById('buscar').value.trim();
             if (query.length < 2) {
                 alert('Por favor, ingrese al menos 2 caracteres para buscar.');
                 return;
             }
 
-            // Simular búsqueda (aquí se conectaría con FastAPI)
-            const resultadosMock = [
-                {
-                    id: 1,
-                    nombre: 'Juan Pérez García',
-                    email: 'juan.perez@email.com',
-                    telefono: '442-123-4567'
-                },
-                {
-                    id: 2,
-                    nombre: 'María González López',
-                    email: 'maria.gonzalez@email.com',
-                    telefono: '442-987-6543'
+            try {
+                // Llamada real a la API de Laravel que se conecta con FastAPI
+                const response = await fetch(`{{ route('beneficiarios.search') }}?q=${encodeURIComponent(query)}`);
+                
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda');
                 }
-            ];
-
-            mostrarResultados(resultadosMock);
+                
+                const resultados = await response.json();
+                mostrarResultados(resultados);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al realizar la búsqueda. Por favor, inténtelo nuevamente.');
+            }
         }
 
         function mostrarResultados(resultados) {
@@ -209,8 +233,9 @@
                     item.className = 'result-item';
                     item.innerHTML = `
                         <div class="result-info">
-                            <h4>${beneficiario.nombre}</h4>
-                            <p>${beneficiario.email} | ${beneficiario.telefono}</p>
+                            <h4>${beneficiario.nombre} ${beneficiario.aP || ''} ${beneficiario.aM || ''}</h4>
+                            <p>${beneficiario.correo} | ${beneficiario.telefono}</p>
+                            <p><strong>Tipo:</strong> ${beneficiario.tipo}</p>
                         </div>
                         <button class="btn-select" onclick="seleccionarBeneficiario(${beneficiario.id})">
                             Seleccionar
@@ -223,42 +248,40 @@
             resultadosDiv.style.display = 'block';
         }
 
-        function seleccionarBeneficiario(id) {
-            // Simular obtención de datos del beneficiario (aquí se conectaría con FastAPI)
-            const datosSimulados = {
-                id: id,
-                nombre: 'Juan Pérez García',
-                email: 'juan.perez@email.com',
-                telefono: '442-123-4567',
-                rfc: 'PEGJ850315ABC',
-                estado: 'queretaro',
-                calle: 'av_universidad',
-                municipio: 'queretaro',
-                colonia: 'centro',
-                no_exterior: '123',
-                no_interior: '2A',
-                codigo_postal: '76000'
-            };
-
-            cargarDatosEnFormulario(datosSimulados);
+        async function seleccionarBeneficiario(id) {
+            try {
+                // Obtener datos completos del beneficiario desde la API
+                const response = await fetch(`{{ url('/beneficiarios/obtener') }}/${id}`);
+                
+                if (!response.ok) {
+                    throw new Error('Error al obtener los datos del beneficiario');
+                }
+                
+                const datos = await response.json();
+                cargarDatosEnFormulario(datos);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar los datos del beneficiario.');
+            }
         }
 
         function cargarDatosEnFormulario(datos) {
+            beneficiarioSeleccionado = datos;
+
             // Llenar el formulario con los datos
-            document.getElementById('nombre').value = datos.nombre;
-            document.getElementById('email').value = datos.email;
-            document.getElementById('telefono').value = datos.telefono;
-            document.getElementById('rfc').value = datos.rfc;
-            document.getElementById('estado').value = datos.estado;
-            document.getElementById('calle').value = datos.calle;
-            document.getElementById('municipio').value = datos.municipio;
-            document.getElementById('colonia').value = datos.colonia;
-            document.getElementById('no_exterior').value = datos.no_exterior;
-            document.getElementById('no_interior').value = datos.no_interior || '';
-            document.getElementById('codigo_postal').value = datos.codigo_postal;
+            document.getElementById('nombre').value = datos.nombre || '';
+            document.getElementById('apellido_paterno').value = datos.aP || '';
+            document.getElementById('apellido_materno').value = datos.aM || '';
+            document.getElementById('correo').value = datos.correo || '';
+            document.getElementById('telefono').value = datos.telefono || '';
+            document.getElementById('edad').value = datos.edad || '';
+            document.getElementById('rfc').value = datos.rfc || '';
+            document.getElementById('pagina_web').value = datos.paginaWeb || '';
+            document.getElementById('tipo').value = datos.tipo || '';
 
             // Actualizar action del formulario
-            document.querySelector('.beneficiario-form').action = `/actualizarBeneficiario/${datos.id}`;
+            document.querySelector('.beneficiario-form').action = `{{ url('/actualizarBeneficiario') }}/${datos.id}`;
 
             // Mostrar el formulario
             document.getElementById('formularioEdicion').style.display = 'block';
@@ -269,7 +292,123 @@
             document.getElementById('formularioEdicion').style.display = 'none';
             document.getElementById('resultados').style.display = 'none';
             document.getElementById('buscar').value = '';
+            document.getElementById('beneficiarioForm').reset();
+            beneficiarioSeleccionado = null;
         }
+
+        // Validación de contraseñas coincidentes
+        document.getElementById('confirmar_contraseña').addEventListener('input', function() {
+            const password = document.getElementById('contraseña').value;
+            const confirmPassword = this.value;
+            const errorElement = document.getElementById('password-error');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (confirmPassword && password !== confirmPassword) {
+                errorElement.style.display = 'block';
+                this.style.borderColor = '#dc3545';
+                submitBtn.disabled = true;
+            } else {
+                errorElement.style.display = 'none';
+                this.style.borderColor = '';
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Validación del formulario antes de enviar
+        document.getElementById('beneficiarioForm').addEventListener('submit', function(e) {
+            const password = document.getElementById('contraseña').value;
+            const confirmPassword = document.getElementById('confirmar_contraseña').value;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (password && password !== confirmPassword) {
+                e.preventDefault();
+                alert('Las contraseñas no coinciden. Por favor, verifica e inténtalo nuevamente.');
+                return false;
+            }
+            
+            // Deshabilitar el botón para evitar doble envío
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Actualizando...';
+            
+            // El formulario se enviará normalmente al controlador
+            return true;
+        });
+
+        // Formateo automático del RFC
+        document.getElementById('rfc').addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+
+        // Validación del teléfono
+        document.getElementById('telefono').addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9-\s\+\(\)]/g, '');
+        });
+
+        // Permitir búsqueda con Enter
+        document.getElementById('buscar').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarBeneficiario();
+            }
+        });
     </script>
+
+    <!-- Mostrar mensajes de éxito -->
+    @if(session('success'))
+        <script>
+            alert('{{ session('success') }}');
+            window.location.href = '{{ route('adminBeneficiarios') }}';
+        </script>
+    @endif
+
+    <!-- Mostrar errores si los hay -->
+    @if($errors->any() && !$errors->has('api'))
+        <script>
+            alert('Por favor, corrige los errores en el formulario.');
+        </script>
+    @endif
+
+    <style>
+        .result-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-info h4 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+
+        .result-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .btn-select {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-select:hover {
+            background: #0056b3;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+    </style>
 </body>
 </html>
