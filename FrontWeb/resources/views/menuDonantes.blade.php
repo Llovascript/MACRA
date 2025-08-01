@@ -33,7 +33,7 @@
 
             <div class="modules-grid donador">
                 <!-- Módulo Perfil -->
-                <div class="module-card" onclick="#">
+                <div class="module-card" onclick="window.location.href='{{ route('perfilDonante') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="images/Perfiles.png" alt="Perfil" class="icon-img">

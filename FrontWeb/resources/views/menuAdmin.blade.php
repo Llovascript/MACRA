@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Administrativo</title>
+    <title>Menú Administrador</title>
     <link href="{{ asset('css/menus.css') }}" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
@@ -37,7 +37,7 @@
             <div class="modules-grid admin">
 
                 <!-- Módulo Solicitudes -->
-                <div class="module-card" onclick="window.location.href='{{ route('solicitudes') }}'">
+                <div class="module-card" onclick="window.location.href='{{ route('adminSolicitudes') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="{{ asset('images/Solicitudes.png') }}" alt="Solicitudes" class="icon-img">
