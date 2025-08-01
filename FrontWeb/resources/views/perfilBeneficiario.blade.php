@@ -27,42 +27,42 @@
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-user input-icon"></i>
-                            <input type="text" class="form-input" placeholder="Nombre">
+                            <input type="text" class="form-input" placeholder="Nombre" readonly>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-user input-icon"></i>
-                            <input type="text" class="form-input" placeholder="Apellido Paterno">
+                            <input type="text" class="form-input" placeholder="Apellido Paterno" readonly>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-user input-icon"></i>
-                            <input type="text" class="form-input" placeholder="Apellido Materno">
+                            <input type="text" class="form-input" placeholder="Apellido Materno" readonly>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-calendar input-icon"></i>
-                            <input type="number" class="form-input" placeholder="Edad">
+                            <input type="number" class="form-input" placeholder="Edad" readonly>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-phone input-icon"></i>
-                            <input type="tel" class="form-input" placeholder="Teléfono">
+                            <input type="tel" class="form-input" placeholder="Teléfono" readonly>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-id-card input-icon"></i>
-                            <input type="text" class="form-input" placeholder="RFC">
+                            <input type="text" class="form-input" placeholder="RFC" readonly>
                         </div>
                     </div>
                 </div>
@@ -72,28 +72,28 @@
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-globe input-icon"></i>
-                            <input type="url" class="form-input" placeholder="Página web (opcional)">
+                            <input type="url" class="form-input" placeholder="Página web (opcional)" readonly>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-envelope input-icon"></i>
-                            <input type="email" class="form-input" placeholder="Correo electrónico">
+                            <input type="email" class="form-input" placeholder="Correo electrónico" readonly>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-lock input-icon"></i>
-                            <input type="password" class="form-input" placeholder="Contraseña">
+                            <input type="password" class="form-input" placeholder="Contraseña" readonly>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <div class="input-container">
                             <i class="fas fa-lock input-icon"></i>
-                            <input type="password" class="form-input" placeholder="Confirmar contraseña">
+                            <input type="password" class="form-input" placeholder="Confirmar contraseña" readonly>
                         </div>
                     </div>
 

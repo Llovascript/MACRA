@@ -29,6 +29,10 @@ Route::get('/adminSolicitudes', function () {
     return view('adminSolicitudes');
 })->name('adminSolicitudes');
 
+Route::get('/solicitudesPerfiles', function () {
+    return view('solicitudesPerfiles');
+})->name('solicitudesPerfiles');
+
 
 // Rutas Beneficiario
 Route::get('/menuBeneficiario', function () {
