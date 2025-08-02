@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BeneficiarioPerfilController;
+use App\Http\Controllers\PerfilDonanteController;
 use App\Http\Controllers\UserDatabaseController;
 
 // Rutas principales
@@ -48,13 +49,13 @@ Route::get('/menuDonantes', function () {
     return view('menuDonantes');
 })->name('donante.menu');
 
-Route::get('/perfilDonante', function () {
-    return view('perfilDonante');
-})->name('perfilDonante');
+Route::get('/perfilDonante', [PerfilDonanteController::class, 'index'])
+    ->name('perfilDonante');
 
 // Rutas de administración de usuarios (para desarrollo/testing)
 Route::prefix('admin')->group(function () {
     Route::get('/check-database', [UserDatabaseController::class, 'checkDatabase'])->name('check.database');
     Route::get('/create-test-user', [UserDatabaseController::class, 'createTestUser'])->name('create.test.user');
+    Route::get('/create-test-donante', [UserDatabaseController::class, 'createTestDonante'])->name('create.test.donante');
     Route::get('/check-reference-data', [UserDatabaseController::class, 'checkReferenceData'])->name('check.reference.data');
 });

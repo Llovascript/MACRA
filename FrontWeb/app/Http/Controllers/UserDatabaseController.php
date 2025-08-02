@@ -18,17 +18,14 @@ class UserDatabaseController extends Controller
     }
 
     /**
-     * Crear usuario de prueba para testing
-     * 
-     * Crea un usuario beneficiario con datos predefinidos
-     * útil para desarrollo y pruebas
+     * Crear usuario beneficiario de prueba para testing
      */
     public function createTestUser()
     {
         try {
             $db = $this->getConnection();
 
-            // Datos del usuario de prueba
+            // Datos del usuario beneficiario de prueba
             $userData = [
                 'tipo' => 'Persona Física',
                 'nombre' => 'María Elena',
@@ -56,7 +53,7 @@ class UserDatabaseController extends Controller
             if ($existingUser) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El usuario de prueba ya existe',
+                    'message' => 'El usuario beneficiario de prueba ya existe',
                     'existing_user_id' => $existingUser->id
                 ]);
             }
@@ -72,14 +69,14 @@ class UserDatabaseController extends Controller
 
             $userId = $db->table('usuarios')->insertGetId($userData);
 
-            Log::info('Usuario de prueba creado exitosamente', [
+            Log::info('Usuario beneficiario de prueba creado exitosamente', [
                 'user_id' => $userId,
                 'correo' => $userData['correo']
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Usuario de prueba creado exitosamente',
+                'message' => 'Usuario beneficiario de prueba creado exitosamente',
                 'user_id' => $userId,
                 'credentials' => [
                     'correo' => $userData['correo'],
@@ -88,11 +85,88 @@ class UserDatabaseController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error creando usuario de prueba: ' . $e->getMessage());
+            Log::error('Error creando usuario beneficiario de prueba: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear usuario de prueba: ' . $e->getMessage()
+                'message' => 'Error al crear usuario beneficiario de prueba: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Crear donante de prueba para testing
+     */
+    public function createTestDonante()
+    {
+        try {
+            $db = $this->getConnection();
+
+            // Datos del donante de prueba
+            $userData = [
+                'tipo' => 'Persona Moral',
+                'nombre' => 'Juan Carlos',
+                'aP' => 'Mendoza',
+                'aM' => 'Reyes',
+                'edad' => 42,
+                'telefono' => '5559876543',
+                'correo' => 'juan.mendoza@fundacion.org',
+                'contraseña' => $this->hashPassword('donante123'),
+                'rfc' => 'MERJ820915ABC',
+                'paginaWeb' => 'https://fundacion-esperanza.org',
+                'fundacion' => '2024-02-01',
+                'aprobacion' => 1,
+                'del' => 0,
+                'rol_id' => 2, // Donante (ID 2 según tu BD)
+                'estatus_id' => 1, // Activo
+                'direccion_id' => 1
+            ];
+
+            // Verificar que no exista el donante
+            $existingUser = $db->table('usuarios')
+                ->where('correo', $userData['correo'])
+                ->first();
+
+            if ($existingUser) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El donante de prueba ya existe',
+                    'existing_user_id' => $existingUser->id
+                ]);
+            }
+
+            // Verificar que existan los IDs de referencia
+            $validations = $this->validateReferenceIds($userData);
+            if (!$validations['valid']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validations['message']
+                ]);
+            }
+
+            $userId = $db->table('usuarios')->insertGetId($userData);
+
+            Log::info('Donante de prueba creado exitosamente', [
+                'user_id' => $userId,
+                'correo' => $userData['correo']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Donante de prueba creado exitosamente',
+                'user_id' => $userId,
+                'credentials' => [
+                    'correo' => $userData['correo'],
+                    'contraseña' => 'donante123'
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error creando donante de prueba: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear donante de prueba: ' . $e->getMessage()
             ]);
         }
     }

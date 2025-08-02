@@ -16,7 +16,7 @@
             <a href="{{ route('beneficiario.menu') }}" class="back-btn">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            <h1 class="title">Datos del Perfil</h1>
+            <h1 class="title">Datos del Perfil - Beneficiario</h1>
         </div>
 
         <!-- Mostrar mensajes de error si existen -->
