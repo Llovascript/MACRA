@@ -134,7 +134,7 @@ class EventoController extends Controller
         return back()->withErrors(['error' => 'Error actualizando evento.'])->withInput();
     }
 
-    // NUEVO: Mostrar eventos disponibles para usuarios beneficiarios
+    // Mostrar eventos disponibles para usuarios beneficiarios
     public function verEventosDisponibles()
     {
         $token = Session::get('access_token');
@@ -152,7 +152,7 @@ class EventoController extends Controller
         }
     }
 
-    // NUEVO: Unirse como beneficiario a un evento
+    // Unirse como beneficiario a un evento
     public function unirseEvento($id)
     {
         $token = Session::get('access_token');
@@ -171,6 +171,28 @@ class EventoController extends Controller
             }
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Error al conectar con la API.']);
+        }
+    }
+
+    // ✅ NUEVO: Capacidad por evento (beneficiarios y donantes)
+    public function capacidad()
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos/capacidad");
+
+            if ($response->successful()) {
+                $capacidades = $response->json();
+                return view('admin.eventos.capacidad_eventos', compact('capacidades'));
+            } else {
+                return redirect()->route('admin.eventos.menu')->with('error', 'Error obteniendo la capacidad de eventos.');
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('admin.eventos.menu')->with('error', 'No se pudo conectar con la API.');
         }
     }
 }

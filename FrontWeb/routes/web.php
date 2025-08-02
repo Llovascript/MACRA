@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EventoController;
+use App\Http\Controllers\DonacionController;
 
 // Rutas públicas: login y registro
 Route::get('/', [UserController::class, 'showLoginRegister'])->name('home');
@@ -27,11 +28,17 @@ Route::middleware(['auth.check'])->group(function () {
         Route::delete('/{id}', [EventoController::class, 'destroy'])->name('admin.eventos.destroy');
         Route::get('/{id}/editar', [EventoController::class, 'edit'])->name('admin.eventos.edit');
         Route::post('/{id}/actualizar', [EventoController::class, 'update'])->name('admin.eventos.update');
+
+        // Ruta corregida para capacidad sin repetir prefijo
+        Route::get('/capacidad', [EventoController::class, 'capacidad'])->name('admin.eventos.capacidad');
     });
 
     // ✅ Rutas para beneficiarios (fuera del prefijo de admin)
     Route::get('/eventos/usuario', [EventoController::class, 'verEventosDisponibles'])->name('eventos.usuario');
     Route::post('/eventos/unirse/{id}', [EventoController::class, 'unirseEvento'])->name('eventos.unirse');
+
+    // Historial de donaciones (solo para donantes)
+    Route::get('/donaciones/historial', [DonacionController::class, 'historial'])->name('donaciones.historial');
 });
 
 // Ruta para logout
