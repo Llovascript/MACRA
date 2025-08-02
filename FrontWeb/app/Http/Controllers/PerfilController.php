@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class DonanteController extends Controller
+class PerfilController extends Controller
 {
     // URL base de tu API FastAPI
     private $apiUrl = 'http://localhost:5001';
@@ -25,21 +25,46 @@ class DonanteController extends Controller
     }
 
     /**
-     * Mostrar el formulario para crear un nuevo donante
+     * Obtener rol_id basado en el tipo de perfil
      */
-    public function create()
+    private function getRolId($tipoPerfil)
     {
-        return view('agregarDonante');
+        return $tipoPerfil === 'donante' ? 2 : 3; // 2=Donante, 3=Beneficiario
     }
 
     /**
-     * Almacenar un nuevo donante
+     * Obtener nombre del perfil
+     */
+    private function getNombrePerfil($tipoPerfil)
+    {
+        return $tipoPerfil === 'donante' ? 'Donante' : 'Beneficiario';
+    }
+
+    /**
+     * Mostrar menú principal de administración de perfiles
+     */
+    public function index()
+    {
+        return view('adminPerfiles');
+    }
+
+    /**
+     * Mostrar el formulario para crear un nuevo perfil
+     */
+    public function create()
+    {
+        return view('agregarPerfil');
+    }
+
+    /**
+     * Almacenar un nuevo perfil (beneficiario o donante)
      */
     public function store(Request $request)
     {
         try {
             // Validar datos
             $validated = $request->validate([
+                'tipo_perfil' => 'required|in:beneficiario,donante',
                 'nombre' => 'required|string|max:255',
                 'aP' => 'nullable|string|max:255',
                 'aM' => 'nullable|string|max:255',
@@ -64,42 +89,75 @@ class DonanteController extends Controller
                 'contraseña' => $validated['contraseña'],
                 'rfc' => $validated['rfc'] ?? null,
                 'paginaWeb' => $validated['paginaWeb'] ?? null,
-                'rol_id' => 2, // Donante
-                'estatus_id' => 1, // Activo por defecto
-                'aprobacion' => true // Auto-aprobar por ahora
+                'rol_id' => $this->getRolId($validated['tipo_perfil']),
+                'estatus_id' => 1, // Activo
+                'aprobacion' => true
             ];
 
-            Log::info('Enviando datos a FastAPI para crear donante:', $userData);
+            // Filtrar valores null
+            $userData = array_filter($userData, function ($value) {
+                return $value !== null && $value !== '';
+            });
 
-            // Enviar datos a FastAPI
-            $response = Http::timeout(30)->post($this->apiUrl . '/auth/register', $userData);
+            // Asegurar campos obligatorios
+            $userData['rol_id'] = $this->getRolId($validated['tipo_perfil']);
+            $userData['estatus_id'] = 1;
+            $userData['aprobacion'] = true;
 
-            Log::info('Respuesta de FastAPI:', [
+            Log::info('🚀 Creando perfil', [
+                'tipo_perfil' => $validated['tipo_perfil'],
+                'datos' => $userData
+            ]);
+
+            // Enviar a FastAPI
+            $response = Http::timeout(30)
+                ->post($this->apiUrl . '/auth/register', $userData);
+
+            Log::info('📥 Respuesta recibida:', [
                 'status' => $response->status(),
-                'body' => $response->body()
+                'tipo_perfil' => $validated['tipo_perfil']
             ]);
 
             if ($response->successful()) {
-                return redirect()->route('adminDonante')
-                    ->with('success', 'Donante agregado exitosamente');
+                $nombrePerfil = $this->getNombrePerfil($validated['tipo_perfil']);
+                return redirect()->route('adminPerfiles')
+                    ->with('success', "{$nombrePerfil} agregado exitosamente");
             } else {
-                $errorData = $response->json();
-                $errorMessage = $errorData['detail'] ?? 'Error al conectar con el servidor';
-                
-                return back()->withErrors(['api' => $errorMessage])
-                    ->withInput($request->except('contraseña'));
+                $statusCode = $response->status();
+                $responseBody = $response->body();
+
+                Log::error('❌ Error de FastAPI:', [
+                    'status' => $statusCode,
+                    'body' => $responseBody
+                ]);
+
+                try {
+                    $errorData = $response->json();
+                } catch (\Exception $e) {
+                    $errorData = ['detail' => 'Respuesta inválida del servidor'];
+                }
+
+                $errorMessage = $this->processApiError($statusCode, $errorData);
+
+                return back()
+                    ->withErrors(['api' => $errorMessage])
+                    ->withInput($request->except(['contraseña', 'confirmar_contraseña']));
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('❌ Error de validación:', $e->errors());
             return back()->withErrors($e->errors())->withInput();
+
         } catch (\Exception $e) {
-            Log::error('Error al crear donante:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            Log::error('❌ Error inesperado:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ]);
-            
-            return back()->withErrors(['error' => 'Error interno del servidor'])
-                ->withInput($request->except('contraseña'));
+
+            return back()
+                ->withErrors(['error' => 'Error interno del servidor. Por favor, inténtelo nuevamente.'])
+                ->withInput($request->except(['contraseña', 'confirmar_contraseña']));
         }
     }
 
@@ -108,41 +166,37 @@ class DonanteController extends Controller
      */
     public function updateForm()
     {
-        return view('actualizarDonante');
+        return view('actualizarPerfil');
     }
 
     /**
-     * Buscar donantes
+     * Buscar perfiles (beneficiarios o donantes)
      */
     public function search(Request $request)
     {
         try {
             $query = $request->get('q', '');
-            
-            Log::info('Realizando búsqueda de donantes:', [
+            $tipoPerfil = $request->get('tipo_perfil', 'beneficiario');
+            $rolId = $this->getRolId($tipoPerfil);
+
+            Log::info('Realizando búsqueda de perfiles:', [
                 'query' => $query,
-                'url' => $this->apiUrl . '/admin/usuarios/search'
+                'tipo_perfil' => $tipoPerfil,
+                'rol_id' => $rolId
             ]);
 
-            // Usar el nuevo endpoint de admin con headers
             $response = Http::timeout(30)
                 ->withHeaders($this->getAdminHeaders())
                 ->get($this->apiUrl . '/admin/usuarios/search', [
-                    'rol_id' => 2, // Donantes
+                    'rol_id' => $rolId,
                     'search' => $query,
                     'limit' => 10
                 ]);
 
-            Log::info('Respuesta de búsqueda de donantes:', [
-                'status' => $response->status(),
-                'body_preview' => substr($response->body(), 0, 200)
-            ]);
-
             if ($response->successful()) {
                 $usuarios = $response->json();
-                
-                // Formatear los resultados
-                $resultados = collect($usuarios)->map(function($usuario) {
+
+                $resultados = collect($usuarios)->map(function ($usuario) {
                     return [
                         'id' => $usuario['id'],
                         'nombre' => $usuario['nombre'],
@@ -157,63 +211,53 @@ class DonanteController extends Controller
                     ];
                 });
 
-                Log::info('Donantes encontrados:', ['count' => $resultados->count()]);
+                Log::info('Perfiles encontrados:', ['count' => $resultados->count()]);
                 return response()->json($resultados);
             } else {
-                Log::error('Error en búsqueda de donantes:', [
+                Log::error('Error en búsqueda:', [
                     'status' => $response->status(),
                     'body' => $response->body()
                 ]);
                 return response()->json(['error' => 'Error en la búsqueda'], 500);
             }
         } catch (\Exception $e) {
-            Log::error('Error en búsqueda de donantes:', [
-                'error' => $e->getMessage()
-            ]);
-            
+            Log::error('Error en búsqueda:', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Error interno del servidor'], 500);
         }
     }
 
     /**
-     * Obtener un donante específico
+     * Obtener un perfil específico
      */
     public function show($id)
     {
         try {
-            Log::info('Obteniendo donante:', ['id' => $id]);
+            Log::info('Obteniendo perfil:', ['id' => $id]);
 
             $response = Http::timeout(30)
                 ->withHeaders($this->getAdminHeaders())
                 ->get($this->apiUrl . "/admin/usuarios/{$id}");
-            
-            Log::info('Respuesta al obtener donante:', [
-                'status' => $response->status(),
-                'id' => $id
-            ]);
 
             if ($response->successful()) {
                 return response()->json($response->json());
             } else {
-                Log::error('Donante no encontrado:', [
+                Log::error('Perfil no encontrado:', [
                     'id' => $id,
-                    'status' => $response->status(),
-                    'body' => $response->body()
+                    'status' => $response->status()
                 ]);
-                return response()->json(['error' => 'Donante no encontrado'], 404);
+                return response()->json(['error' => 'Perfil no encontrado'], 404);
             }
         } catch (\Exception $e) {
-            Log::error('Error al obtener donante:', [
+            Log::error('Error al obtener perfil:', [
                 'id' => $id,
                 'error' => $e->getMessage()
             ]);
-            
             return response()->json(['error' => 'Error interno del servidor'], 500);
         }
     }
 
     /**
-     * Actualizar un donante específico
+     * Actualizar un perfil específico
      */
     public function update(Request $request, $id)
     {
@@ -243,7 +287,7 @@ class DonanteController extends Controller
                 'correo' => $validated['correo'],
                 'rfc' => $validated['rfc'],
                 'paginaWeb' => $validated['paginaWeb'],
-            ], function($value) {
+            ], function ($value) {
                 return $value !== null && $value !== '';
             });
 
@@ -252,33 +296,21 @@ class DonanteController extends Controller
                 $updateData['contraseña'] = $validated['contraseña'];
             }
 
-            Log::info('Actualizando donante:', [
+            Log::info('Actualizando perfil:', [
                 'id' => $id,
                 'data' => $updateData
             ]);
 
-            // Enviar actualización a FastAPI usando el endpoint de admin
             $response = Http::timeout(30)
                 ->withHeaders($this->getAdminHeaders())
                 ->put($this->apiUrl . "/admin/usuarios/{$id}", $updateData);
 
-            Log::info('Respuesta de actualización:', [
-                'status' => $response->status(),
-                'id' => $id
-            ]);
-
             if ($response->successful()) {
-                return redirect()->route('adminDonante')
-                    ->with('success', 'Donante actualizado exitosamente');
+                return redirect()->route('adminPerfiles')
+                    ->with('success', 'Perfil actualizado exitosamente');
             } else {
                 $errorData = $response->json();
-                $errorMessage = $errorData['detail'] ?? 'Error al actualizar el donante';
-                
-                Log::error('Error al actualizar donante:', [
-                    'id' => $id,
-                    'status' => $response->status(),
-                    'error' => $errorMessage
-                ]);
+                $errorMessage = $errorData['detail'] ?? 'Error al actualizar el perfil';
 
                 return back()->withErrors(['api' => $errorMessage])
                     ->withInput($request->except('contraseña'));
@@ -287,11 +319,11 @@ class DonanteController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            Log::error('Error al actualizar donante:', [
+            Log::error('Error al actualizar perfil:', [
                 'id' => $id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return back()->withErrors(['error' => 'Error interno del servidor'])
                 ->withInput($request->except('contraseña'));
         }
@@ -302,40 +334,29 @@ class DonanteController extends Controller
      */
     public function deleteForm()
     {
-        return view('eliminarDonante');
+        return view('eliminarPerfil');
     }
 
     /**
-     * Eliminar un donante específico (soft delete)
+     * Eliminar un perfil específico
      */
     public function destroy($id)
     {
         try {
-            Log::info('Eliminando donante:', ['id' => $id]);
+            Log::info('Eliminando perfil:', ['id' => $id]);
 
             $response = Http::timeout(30)
                 ->withHeaders($this->getAdminHeaders())
                 ->delete($this->apiUrl . "/admin/usuarios/{$id}");
 
-            Log::info('Respuesta de eliminación:', [
-                'status' => $response->status(),
-                'id' => $id
-            ]);
-
             if ($response->successful()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Donante eliminado exitosamente'
+                    'message' => 'Perfil eliminado exitosamente'
                 ]);
             } else {
                 $errorData = $response->json();
-                $errorMessage = $errorData['detail'] ?? 'Error al eliminar el donante';
-                
-                Log::error('Error al eliminar donante:', [
-                    'id' => $id,
-                    'status' => $response->status(),
-                    'error' => $errorMessage
-                ]);
+                $errorMessage = $errorData['detail'] ?? 'Error al eliminar el perfil';
 
                 return response()->json([
                     'success' => false,
@@ -343,11 +364,11 @@ class DonanteController extends Controller
                 ], $response->status());
             }
         } catch (\Exception $e) {
-            Log::error('Error al eliminar donante:', [
+            Log::error('Error al eliminar perfil:', [
                 'id' => $id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error interno del servidor'
@@ -356,15 +377,46 @@ class DonanteController extends Controller
     }
 
     /**
-     * Métodos del código base existente (si los necesitas)
+     * Procesar errores de la API
      */
-    public function profile()
+    private function processApiError($statusCode, $errorData)
     {
-        return view('perfilDonante');
-    }
+        switch ($statusCode) {
+            case 400:
+                if (isset($errorData['detail']) && strpos($errorData['detail'], 'Email already registered') !== false) {
+                    return 'El correo electrónico ya está registrado. Por favor, use otro correo.';
+                }
+                return $errorData['detail'] ?? 'Error de solicitud. Verifique los datos ingresados.';
 
-    public function menu()
-    {
-        return view('menuDonantes');
+            case 422:
+                if (isset($errorData['detail']) && is_array($errorData['detail'])) {
+                    $errors = [];
+                    foreach ($errorData['detail'] as $error) {
+                        if (isset($error['loc']) && isset($error['msg'])) {
+                            $field = end($error['loc']);
+                            $message = $error['msg'];
+
+                            if (strpos($message, 'Input should be') !== false && strpos($message, 'persona') !== false) {
+                                $errors[] = "El tipo debe ser 'persona' o 'organizacion'";
+                            } elseif (strpos($message, 'value is not a valid email') !== false) {
+                                $errors[] = "El formato del correo electrónico no es válido";
+                            } else {
+                                $errors[] = "Campo {$field}: {$message}";
+                            }
+                        }
+                    }
+                    return implode('. ', $errors);
+                }
+                return $errorData['detail'] ?? 'Error de validación de datos.';
+
+            case 401:
+                return 'Error de autenticación. Por favor, contacte al administrador.';
+
+            case 500:
+                return 'Error interno del servidor. Por favor, inténtelo más tarde.';
+
+            default:
+                return $errorData['detail'] ?? "Error del servidor (código {$statusCode}).";
+        }
     }
 }

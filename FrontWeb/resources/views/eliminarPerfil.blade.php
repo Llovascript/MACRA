@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eliminar Beneficiario</title>
+    <title>Eliminar Perfil</title>
     <link rel="stylesheet" href="{{ asset('css/crudUsuarios.css') }}">
 </head>
 <body>
     <div class="crud-container">
         <!-- Header -->
         <div class="crud-header">
-            <button class="back-btn" onclick="window.location.href='{{ route('adminBeneficiarios') }}'">
+            <button class="back-btn" onclick="window.location.href='{{ route('adminPerfiles') }}'">
                 <svg class="back-icon" viewBox="0 0 24 24" fill="none">
                     <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </button>
-            <h1 class="page-title">Eliminar Beneficiario</h1>
+            <h1 class="page-title">Eliminar Perfil</h1>
         </div>
 
         <!-- Contenido principal -->
@@ -23,13 +23,26 @@
             <!-- Sección de búsqueda -->
             <div class="search-container">
                 <div class="search-section">
-                    <h2>Buscar Beneficiario</h2>
+                    <h2>Buscar Perfil para Eliminar</h2>
+                    
+                    <!-- Selector de tipo de perfil para búsqueda -->
+                    <div class="search-tipo-selector">
+                        <label class="tipo-option" data-tipo="beneficiario">
+                            <input type="radio" name="tipo_busqueda" value="beneficiario" checked>
+                            <span class="tipo-text">👥 Beneficiarios</span>
+                        </label>
+                        <label class="tipo-option" data-tipo="donante">
+                            <input type="radio" name="tipo_busqueda" value="donante">
+                            <span class="tipo-text">🤝 Donantes</span>
+                        </label>
+                    </div>
+                    
                     <div class="search-row">
                         <div class="search-group">
                             <input type="text" id="buscar" name="buscar" class="search-input" 
                                    placeholder="Ingrese nombre, email o teléfono...">
                         </div>
-                        <button type="button" class="btn-search" onclick="buscarBeneficiario()">
+                        <button type="button" class="btn-search" onclick="buscarPerfil()">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                 <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
                                 <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
@@ -56,8 +69,13 @@
                                   stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </div>
-                    <h2 class="warning-title">¿Está seguro de eliminar este beneficiario?</h2>
-                    <p class="warning-text">Esta acción no se puede deshacer. Todos los datos del beneficiario serán eliminados permanentemente.</p>
+                    <h2 class="warning-title" id="warningTitle">¿Está seguro de eliminar este perfil?</h2>
+                    <p class="warning-text">Esta acción no se puede deshacer. Todos los datos del perfil serán eliminados permanentemente.</p>
+                </div>
+
+                <!-- Información del perfil a eliminar -->
+                <div class="perfil-info-delete">
+                    <h3 id="perfilTipoEliminar">Eliminando: Beneficiario</h3>
                 </div>
 
                 <!-- Formulario de datos readonly -->
@@ -131,7 +149,7 @@
                     <!-- Tipo de perfil -->
                     <div class="form-field">
                         <div class="field-icon icon-profile"></div>
-                        <input type="text" class="form-input" value="Beneficiario" readonly>
+                        <input type="text" id="perfil_readonly" class="form-input" readonly>
                     </div>
                 </div>
 
@@ -145,25 +163,48 @@
     </div>
 
     <script>
-        let beneficiarioSeleccionado = null;
+        let perfilSeleccionado = null;
+        let tipoPerfilActual = 'beneficiario';
 
-        async function buscarBeneficiario() {
+        // Manejar cambio de tipo de búsqueda
+        document.querySelectorAll('input[name="tipo_busqueda"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                tipoPerfilActual = this.value;
+                updateSearchInterface(this.value);
+            });
+        });
+
+        function updateSearchInterface(tipoBusqueda) {
+            // Actualizar selector visual
+            document.querySelectorAll('.tipo-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.querySelector(`[data-tipo="${tipoBusqueda}"]`).classList.add('selected');
+            
+            // Limpiar resultados anteriores
+            document.getElementById('resultados').style.display = 'none';
+            document.getElementById('confirmacionEliminacion').style.display = 'none';
+            document.getElementById('buscar').value = '';
+        }
+
+        async function buscarPerfil() {
             const query = document.getElementById('buscar').value.trim();
+            const tipoBusqueda = document.querySelector('input[name="tipo_busqueda"]:checked').value;
+            
             if (query.length < 2) {
                 alert('Por favor, ingrese al menos 2 caracteres para buscar.');
                 return;
             }
 
             try {
-                // Llamada real a la API de Laravel que se conecta con FastAPI
-                const response = await fetch(`{{ route('beneficiarios.search') }}?q=${encodeURIComponent(query)}`);
+                const response = await fetch(`{{ route('perfiles.search') }}?q=${encodeURIComponent(query)}&tipo_perfil=${tipoBusqueda}`);
                 
                 if (!response.ok) {
                     throw new Error('Error en la búsqueda');
                 }
                 
                 const resultados = await response.json();
-                mostrarResultados(resultados);
+                mostrarResultados(resultados, tipoBusqueda);
                 
             } catch (error) {
                 console.error('Error:', error);
@@ -171,25 +212,26 @@
             }
         }
 
-        function mostrarResultados(resultados) {
+        function mostrarResultados(resultados, tipoBusqueda) {
             const resultadosDiv = document.getElementById('resultados');
             const listaDiv = document.getElementById('listaResultados');
             
             listaDiv.innerHTML = '';
             
             if (resultados.length === 0) {
-                listaDiv.innerHTML = '<p class="no-results">No se encontraron beneficiarios.</p>';
+                const tipoTexto = tipoBusqueda === 'donante' ? 'donantes' : 'beneficiarios';
+                listaDiv.innerHTML = `<p class="no-results">No se encontraron ${tipoTexto}.</p>`;
             } else {
-                resultados.forEach(beneficiario => {
+                resultados.forEach(perfil => {
                     const item = document.createElement('div');
                     item.className = 'result-item';
                     item.innerHTML = `
                         <div class="result-info">
-                            <h4>${beneficiario.nombre} ${beneficiario.aP || ''} ${beneficiario.aM || ''}</h4>
-                            <p>${beneficiario.correo} | ${beneficiario.telefono}</p>
-                            <p><strong>Tipo:</strong> ${beneficiario.tipo}</p>
+                            <h4>${perfil.nombre} ${perfil.aP || ''} ${perfil.aM || ''}</h4>
+                            <p>${perfil.correo} | ${perfil.telefono}</p>
+                            <p><strong>Tipo:</strong> ${perfil.tipo}</p>
                         </div>
-                        <button class="btn-delete" onclick="seleccionarParaEliminar(${beneficiario.id})" style="padding: 0.5rem 1.5rem; font-size: 0.9rem;">
+                        <button class="btn-delete" onclick="seleccionarParaEliminar(${perfil.id}, '${tipoBusqueda}')" style="padding: 0.5rem 1.5rem; font-size: 0.9rem;">
                             Eliminar
                         </button>
                     `;
@@ -200,26 +242,31 @@
             resultadosDiv.style.display = 'block';
         }
 
-        async function seleccionarParaEliminar(id) {
+        async function seleccionarParaEliminar(id, tipoPerfil) {
             try {
-                // Obtener datos completos del beneficiario desde la API
-                const response = await fetch(`{{ url('/beneficiarios/obtener') }}/${id}`);
+                const response = await fetch(`{{ url('/perfiles/obtener') }}/${id}`);
                 
                 if (!response.ok) {
-                    throw new Error('Error al obtener los datos del beneficiario');
+                    throw new Error('Error al obtener los datos del perfil');
                 }
                 
                 const datos = await response.json();
-                mostrarConfirmacion(datos);
+                mostrarConfirmacion(datos, tipoPerfil);
                 
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cargar los datos del beneficiario.');
+                alert('Error al cargar los datos del perfil.');
             }
         }
 
-        function mostrarConfirmacion(datos) {
-            beneficiarioSeleccionado = datos;
+        function mostrarConfirmacion(datos, tipoPerfil) {
+            perfilSeleccionado = datos;
+            const nombrePerfil = tipoPerfil === 'donante' ? 'Donante' : 'Beneficiario';
+
+            // Actualizar títulos y mensajes
+            document.getElementById('warningTitle').textContent = `¿Está seguro de eliminar este ${nombrePerfil.toLowerCase()}?`;
+            document.getElementById('perfilTipoEliminar').textContent = `Eliminando: ${nombrePerfil}`;
+            document.getElementById('perfil_readonly').value = nombrePerfil;
 
             // Llenar los campos readonly con los datos
             document.getElementById('nombre').value = datos.nombre || '';
@@ -238,16 +285,17 @@
         }
 
         async function confirmarEliminacion() {
-            if (!beneficiarioSeleccionado) return;
+            if (!perfilSeleccionado) return;
 
-            if (confirm(`¿Está completamente seguro de eliminar a ${beneficiarioSeleccionado.nombre}? Esta acción es irreversible.`)) {
+            const nombrePerfil = tipoPerfilActual === 'donante' ? 'donante' : 'beneficiario';
+            
+            if (confirm(`¿Está completamente seguro de eliminar a ${perfilSeleccionado.nombre}? Esta acción es irreversible.`)) {
                 const deleteBtn = document.getElementById('deleteBtn');
                 deleteBtn.disabled = true;
                 deleteBtn.textContent = 'Eliminando...';
 
                 try {
-                    // Llamada real a la API para eliminar
-                    const response = await fetch(`{{ url('/eliminarBeneficiario') }}/${beneficiarioSeleccionado.id}`, {
+                    const response = await fetch(`{{ url('/perfiles/eliminar') }}/${perfilSeleccionado.id}`, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
@@ -258,17 +306,17 @@
                     const result = await response.json();
 
                     if (response.ok && result.success) {
-                        alert('Beneficiario eliminado exitosamente');
-                        window.location.href = '{{ route("adminBeneficiarios") }}';
+                        alert(`${nombrePerfil.charAt(0).toUpperCase() + nombrePerfil.slice(1)} eliminado exitosamente`);
+                        window.location.href = '{{ route("adminPerfiles") }}';
                     } else {
-                        alert(result.message || 'Error al eliminar el beneficiario');
+                        alert(result.message || `Error al eliminar el ${nombrePerfil}`);
                         deleteBtn.disabled = false;
                         deleteBtn.textContent = 'Eliminar';
                     }
 
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Error al eliminar el beneficiario. Por favor, inténtelo nuevamente.');
+                    alert(`Error al eliminar el ${nombrePerfil}. Por favor, inténtelo nuevamente.`);
                     deleteBtn.disabled = false;
                     deleteBtn.textContent = 'Eliminar';
                 }
@@ -279,14 +327,19 @@
             document.getElementById('confirmacionEliminacion').style.display = 'none';
             document.getElementById('resultados').style.display = 'none';
             document.getElementById('buscar').value = '';
-            beneficiarioSeleccionado = null;
+            perfilSeleccionado = null;
         }
 
         // Permitir búsqueda con Enter
         document.getElementById('buscar').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                buscarBeneficiario();
+                buscarPerfil();
             }
+        });
+
+        // Inicializar interfaz
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSearchInterface('beneficiario');
         });
     </script>
 
@@ -294,6 +347,64 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <style>
+        /* Selector de tipo para búsqueda */
+        .search-tipo-selector {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tipo-option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tipo-option input[type="radio"] {
+            display: none;
+        }
+
+        .tipo-option:hover {
+            border-color: #d4a574;
+            transform: translateY(-2px);
+        }
+
+        .tipo-option.selected {
+            border-color: #007bff;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            transform: translateY(-2px);
+        }
+
+        .tipo-text {
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Información del perfil a eliminar */
+        .perfil-info-delete {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #fff5f5, #ffebee);
+            border: 2px solid #fed7d7;
+            border-radius: 10px;
+        }
+
+        .perfil-info-delete h3 {
+            color: #dc3545;
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
         /* Estilos específicos para campos readonly */
         .form-input[readonly] {
             background-color: #f1f3f4;
@@ -356,6 +467,20 @@
         .warning-text {
             color: #666;
         }
+
+        @media (max-width: 768px) {
+            .search-tipo-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tipo-option {
+                width: 100%;
+                max-width: 200px;
+                justify-content: center;
+            }
+        }
     </style>
 </body>
 </html>
+

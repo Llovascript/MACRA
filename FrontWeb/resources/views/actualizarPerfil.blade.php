@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Actualizar Beneficiario</title>
+    <title>Actualizar Perfil</title>
     <link rel="stylesheet" href="{{ asset('css/crudUsuarios.css') }}">
 </head>
 <body>
     <div class="crud-container">
         <!-- Header -->
         <div class="crud-header">
-            <button class="back-btn" onclick="window.location.href='{{ route('adminBeneficiarios') }}'">
+            <button class="back-btn" onclick="window.location.href='{{ route('adminPerfiles') }}'">
                 <svg class="back-icon" viewBox="0 0 24 24" fill="none">
                     <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </button>
-            <h1 class="page-title">Actualizar Beneficiario</h1>
+            <h1 class="page-title">Actualizar Perfil</h1>
         </div>
 
         <!-- Contenido principal -->
@@ -23,13 +23,26 @@
             <!-- Sección de búsqueda -->
             <div class="search-container">
                 <div class="search-section">
-                    <h2>Buscar Beneficiario</h2>
+                    <h2>Buscar Perfil</h2>
+                    
+                    <!-- Selector de tipo de perfil para búsqueda -->
+                    <div class="search-tipo-selector">
+                        <label class="tipo-option" data-tipo="beneficiario">
+                            <input type="radio" name="tipo_busqueda" value="beneficiario" checked>
+                            <span class="tipo-text">👥 Beneficiarios</span>
+                        </label>
+                        <label class="tipo-option" data-tipo="donante">
+                            <input type="radio" name="tipo_busqueda" value="donante">
+                            <span class="tipo-text">🤝 Donantes</span>
+                        </label>
+                    </div>
+                    
                     <div class="search-row">
                         <div class="search-group">
                             <input type="text" id="buscar" name="buscar" class="search-input" 
                                    placeholder="Ingrese nombre, email o teléfono...">
                         </div>
-                        <button type="button" class="btn-search" onclick="buscarBeneficiario()">
+                        <button type="button" class="btn-search" onclick="buscarPerfil()">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                 <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
                                 <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
@@ -49,9 +62,15 @@
 
             <!-- Formulario de edición (oculto inicialmente) -->
             <div class="form-container" id="formularioEdicion" style="display: none;">
-                <form id="beneficiarioForm" class="beneficiario-form" method="POST" action="">
+                <form id="perfilForm" class="perfil-form" method="POST" action="">
                     @csrf
                     @method('PUT')
+                    
+                    <!-- Información del perfil seleccionado -->
+                    <div class="perfil-info">
+                        <h3 id="perfilTipo">Actualizando: Beneficiario</h3>
+                    </div>
+
                     <div class="form-grid">
                         <!-- Nombre -->
                         <div class="form-field">
@@ -167,11 +186,10 @@
                             @enderror
                         </div>
 
-                        <!-- Tipo de perfil (fijo para beneficiario) -->
+                        <!-- Tipo de perfil (readonly) -->
                         <div class="form-field">
                             <div class="field-icon icon-profile"></div>
-                            <input type="text" class="form-input" value="Beneficiario" readonly>
-                            <input type="hidden" name="rol_id" value="3">
+                            <input type="text" id="perfil_readonly" class="form-input" readonly>
                         </div>
                     </div>
 
@@ -193,25 +211,46 @@
     </div>
 
     <script>
-        let beneficiarioSeleccionado = null;
+        let perfilSeleccionado = null;
 
-        async function buscarBeneficiario() {
+        // Manejar cambio de tipo de búsqueda
+        document.querySelectorAll('input[name="tipo_busqueda"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                updateSearchInterface(this.value);
+            });
+        });
+
+        function updateSearchInterface(tipoBusqueda) {
+            // Actualizar selector visual
+            document.querySelectorAll('.tipo-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.querySelector(`[data-tipo="${tipoBusqueda}"]`).classList.add('selected');
+            
+            // Limpiar resultados anteriores
+            document.getElementById('resultados').style.display = 'none';
+            document.getElementById('formularioEdicion').style.display = 'none';
+            document.getElementById('buscar').value = '';
+        }
+
+        async function buscarPerfil() {
             const query = document.getElementById('buscar').value.trim();
+            const tipoBusqueda = document.querySelector('input[name="tipo_busqueda"]:checked').value;
+            
             if (query.length < 2) {
                 alert('Por favor, ingrese al menos 2 caracteres para buscar.');
                 return;
             }
 
             try {
-                // Llamada real a la API de Laravel que se conecta con FastAPI
-                const response = await fetch(`{{ route('beneficiarios.search') }}?q=${encodeURIComponent(query)}`);
+                const response = await fetch(`{{ route('perfiles.search') }}?q=${encodeURIComponent(query)}&tipo_perfil=${tipoBusqueda}`);
                 
                 if (!response.ok) {
                     throw new Error('Error en la búsqueda');
                 }
                 
                 const resultados = await response.json();
-                mostrarResultados(resultados);
+                mostrarResultados(resultados, tipoBusqueda);
                 
             } catch (error) {
                 console.error('Error:', error);
@@ -219,25 +258,26 @@
             }
         }
 
-        function mostrarResultados(resultados) {
+        function mostrarResultados(resultados, tipoBusqueda) {
             const resultadosDiv = document.getElementById('resultados');
             const listaDiv = document.getElementById('listaResultados');
             
             listaDiv.innerHTML = '';
             
             if (resultados.length === 0) {
-                listaDiv.innerHTML = '<p class="no-results">No se encontraron beneficiarios.</p>';
+                const tipoTexto = tipoBusqueda === 'donante' ? 'donantes' : 'beneficiarios';
+                listaDiv.innerHTML = `<p class="no-results">No se encontraron ${tipoTexto}.</p>`;
             } else {
-                resultados.forEach(beneficiario => {
+                resultados.forEach(perfil => {
                     const item = document.createElement('div');
                     item.className = 'result-item';
                     item.innerHTML = `
                         <div class="result-info">
-                            <h4>${beneficiario.nombre} ${beneficiario.aP || ''} ${beneficiario.aM || ''}</h4>
-                            <p>${beneficiario.correo} | ${beneficiario.telefono}</p>
-                            <p><strong>Tipo:</strong> ${beneficiario.tipo}</p>
+                            <h4>${perfil.nombre} ${perfil.aP || ''} ${perfil.aM || ''}</h4>
+                            <p>${perfil.correo} | ${perfil.telefono}</p>
+                            <p><strong>Tipo:</strong> ${perfil.tipo}</p>
                         </div>
-                        <button class="btn-select" onclick="seleccionarBeneficiario(${beneficiario.id})">
+                        <button class="btn-select" onclick="seleccionarPerfil(${perfil.id}, '${tipoBusqueda}')">
                             Seleccionar
                         </button>
                     `;
@@ -248,26 +288,30 @@
             resultadosDiv.style.display = 'block';
         }
 
-        async function seleccionarBeneficiario(id) {
+        async function seleccionarPerfil(id, tipoPerfil) {
             try {
-                // Obtener datos completos del beneficiario desde la API
-                const response = await fetch(`{{ url('/beneficiarios/obtener') }}/${id}`);
+                const response = await fetch(`{{ url('/perfiles/obtener') }}/${id}`);
                 
                 if (!response.ok) {
-                    throw new Error('Error al obtener los datos del beneficiario');
+                    throw new Error('Error al obtener los datos del perfil');
                 }
                 
                 const datos = await response.json();
-                cargarDatosEnFormulario(datos);
+                cargarDatosEnFormulario(datos, tipoPerfil);
                 
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cargar los datos del beneficiario.');
+                alert('Error al cargar los datos del perfil.');
             }
         }
 
-        function cargarDatosEnFormulario(datos) {
-            beneficiarioSeleccionado = datos;
+        function cargarDatosEnFormulario(datos, tipoPerfil) {
+            perfilSeleccionado = datos;
+
+            // Actualizar información del perfil
+            const nombrePerfil = tipoPerfil === 'donante' ? 'Donante' : 'Beneficiario';
+            document.getElementById('perfilTipo').textContent = `Actualizando: ${nombrePerfil}`;
+            document.getElementById('perfil_readonly').value = nombrePerfil;
 
             // Llenar el formulario con los datos
             document.getElementById('nombre').value = datos.nombre || '';
@@ -281,7 +325,7 @@
             document.getElementById('tipo').value = datos.tipo || '';
 
             // Actualizar action del formulario
-            document.querySelector('.beneficiario-form').action = `{{ url('/actualizarBeneficiario') }}/${datos.id}`;
+            document.querySelector('.perfil-form').action = `{{ url('/perfiles/actualizar') }}/${datos.id}`;
 
             // Mostrar el formulario
             document.getElementById('formularioEdicion').style.display = 'block';
@@ -292,8 +336,8 @@
             document.getElementById('formularioEdicion').style.display = 'none';
             document.getElementById('resultados').style.display = 'none';
             document.getElementById('buscar').value = '';
-            document.getElementById('beneficiarioForm').reset();
-            beneficiarioSeleccionado = null;
+            document.getElementById('perfilForm').reset();
+            perfilSeleccionado = null;
         }
 
         // Validación de contraseñas coincidentes
@@ -315,7 +359,7 @@
         });
 
         // Validación del formulario antes de enviar
-        document.getElementById('beneficiarioForm').addEventListener('submit', function(e) {
+        document.getElementById('perfilForm').addEventListener('submit', function(e) {
             const password = document.getElementById('contraseña').value;
             const confirmPassword = document.getElementById('confirmar_contraseña').value;
             const submitBtn = document.getElementById('submitBtn');
@@ -330,7 +374,6 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Actualizando...';
             
-            // El formulario se enviará normalmente al controlador
             return true;
         });
 
@@ -347,8 +390,13 @@
         // Permitir búsqueda con Enter
         document.getElementById('buscar').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                buscarBeneficiario();
+                buscarPerfil();
             }
+        });
+
+        // Inicializar interfaz
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSearchInterface('beneficiario');
         });
     </script>
 
@@ -356,7 +404,7 @@
     @if(session('success'))
         <script>
             alert('{{ session('success') }}');
-            window.location.href = '{{ route('adminBeneficiarios') }}';
+            window.location.href = '{{ route('adminPerfiles') }}';
         </script>
     @endif
 
@@ -368,6 +416,62 @@
     @endif
 
     <style>
+        /* Selector de tipo para búsqueda */
+        .search-tipo-selector {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tipo-option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tipo-option input[type="radio"] {
+            display: none;
+        }
+
+        .tipo-option:hover {
+            border-color: #d4a574;
+            transform: translateY(-2px);
+        }
+
+        .tipo-option.selected {
+            border-color: #007bff;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            transform: translateY(-2px);
+        }
+
+        .tipo-text {
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Información del perfil */
+        .perfil-info {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .perfil-info h3 {
+            color: #007bff;
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
         .result-item {
             background: white;
             border: 1px solid #ddd;
@@ -409,6 +513,33 @@
             font-style: italic;
             padding: 20px;
         }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .search-tipo-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tipo-option {
+                width: 100%;
+                max-width: 200px;
+                justify-content: center;
+            }
+        }
     </style>
 </body>
 </html>
+
