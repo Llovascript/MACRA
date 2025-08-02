@@ -2,13 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BeneficiarioPerfilController;
+use App\Http\Controllers\UserDatabaseController;
 
-// Rutas para mostrar vistas
+// Rutas principales
 Route::get('/index', [UserController::class, 'showIndex'])->name('index');
 Route::get('/', [UserController::class, 'showLoginRegister'])->name('home');
 Route::get('/login', [UserController::class, 'showLoginRegister'])->name('login.register');
 
-// Rutas API para autenticación (estas son las que usará JavaScript)
+// Rutas API para autenticación
 Route::post('/auth/login', [UserController::class, 'login'])->name('api.login');
 Route::post('/auth/register', [UserController::class, 'register'])->name('api.register');
 
@@ -17,10 +19,10 @@ Route::middleware(['auth.check'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
 });
 
-// Ruta de logout (sin middleware porque necesita limpiar la sesión)
+// Ruta de logout
 Route::post('/logout', [UserController::class, 'logout'])->name('logout');
 
-// Rutas Admministrador
+// Rutas Administrador
 Route::get('/menuAdmin', function () {
     return view('menuAdmin');
 })->name('admin.menu');
@@ -33,16 +35,13 @@ Route::get('/solicitudesPerfiles', function () {
     return view('solicitudesPerfiles');
 })->name('solicitudesPerfiles');
 
-
 // Rutas Beneficiario
 Route::get('/menuBeneficiario', function () {
     return view('menuBeneficiario');
 })->name('beneficiario.menu');
 
-Route::get('/perfilBeneficiario', function () {
-    return view('perfilBeneficiario');
-})->name('perfilBeneficiario');
-
+Route::get('/perfilBeneficiario', [BeneficiarioPerfilController::class, 'index'])
+    ->name('perfilBeneficiario');
 
 // Rutas Donadores
 Route::get('/menuDonantes', function () {
@@ -52,3 +51,10 @@ Route::get('/menuDonantes', function () {
 Route::get('/perfilDonante', function () {
     return view('perfilDonante');
 })->name('perfilDonante');
+
+// Rutas de administración de usuarios (para desarrollo/testing)
+Route::prefix('admin')->group(function () {
+    Route::get('/check-database', [UserDatabaseController::class, 'checkDatabase'])->name('check.database');
+    Route::get('/create-test-user', [UserDatabaseController::class, 'createTestUser'])->name('create.test.user');
+    Route::get('/check-reference-data', [UserDatabaseController::class, 'checkReferenceData'])->name('check.reference.data');
+});
