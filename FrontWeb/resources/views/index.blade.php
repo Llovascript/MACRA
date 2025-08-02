@@ -167,7 +167,7 @@
                         ],
                         [
                             'icon' => 'fa-solid fa-globe',
-                            'text' => 'www.macraWeb.com',
+                            'text' => 'https://macra.com.mx/FastAPI/',
                         ],
                     ];
                 @endphp
