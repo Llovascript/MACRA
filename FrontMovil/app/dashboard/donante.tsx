@@ -1,21 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, SafeAreaView } from "react-native"
 import { useRouter } from "expo-router"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 import FondoImage from "../../assets/images/fondo.jpg"
 
-interface User {
-  id: number
-  correo: string
-  rol_id: number
-}
-
 export default function DonanteDashboard() {
-  const [user, setUser] = useState<User | null>(null)
+  const [userName, setUserName] = useState("")
   const router = useRouter()
 
   useEffect(() => {
@@ -24,83 +18,86 @@ export default function DonanteDashboard() {
 
   const loadUserData = async () => {
     try {
-      const userData = await AsyncStorage.getItem("userData")
-      if (userData) {
-        setUser(JSON.parse(userData))
-      }
+      const name = await AsyncStorage.getItem("user_name")
+      setUserName(name || "Donador")
     } catch (error) {
       console.error("Error loading user data:", error)
     }
   }
 
   const handleLogout = async () => {
-    Alert.alert("Cerrar Sesión", "¿Estás seguro de que quieres cerrar sesión?", [
+    Alert.alert("Cerrar Sesión", "¿Estás seguro de que deseas cerrar sesión?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Cerrar Sesión",
+        style: "destructive",
         onPress: async () => {
-          await AsyncStorage.removeItem("userToken")
-          await AsyncStorage.removeItem("userData")
-          router.replace("/")
+          try {
+            await AsyncStorage.multiRemove(["access_token", "user_role", "user_name", "user_id"])
+            router.replace("/")
+          } catch (error) {
+            console.error("Error during logout:", error)
+          }
         },
       },
     ])
   }
 
-  const menuItems = [
-    {
-      title: "Perfil",
-      icon: "account",
-      onPress: () => Alert.alert("Perfil", "Funcionalidad en desarrollo"),
-    },
-    {
-      title: "Donaciones Realizadas",
-      icon: "heart-multiple",
-      onPress: () => Alert.alert("Donaciones Realizadas", "Funcionalidad en desarrollo"),
-    },
-    {
-      title: "Eventos",
-      icon: "calendar",
-      onPress: () => Alert.alert("Eventos", "Funcionalidad en desarrollo"),
-    },
-    {
-      title: "Estatus Solicitudes",
-      icon: "message-processing",
-      onPress: () => Alert.alert("Estatus Solicitudes", "Funcionalidad en desarrollo"),
-    },
-  ]
+  const handleMenuOption = (option: string) => {
+    Alert.alert("Próximamente", `La función ${option} estará disponible pronto.`)
+  }
 
   return (
-    <View style={styles.containerWithBackground}>
+    <SafeAreaView style={styles.container}>
       <Image source={FondoImage} style={styles.backgroundImage} resizeMode="cover" />
       <View style={styles.overlay}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <MaterialCommunityIcons name="logout" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.welcomeText}>¡Bienvenido Donador!</Text>
-          <Text style={styles.emailText}>{user?.correo}</Text>
-        </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <MaterialCommunityIcons name="logout" size={24} color="#fff" />
+        </TouchableOpacity>
 
-        <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.menuGrid}>
-            {menuItems.map((item, index) => (
-              <TouchableOpacity key={index} style={styles.menuItem} onPress={item.onPress}>
-                <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons name={item.icon as any} size={40} color="#8B4513" />
-                </View>
-                <Text style={styles.menuItemText}>{item.title}</Text>
-              </TouchableOpacity>
-            ))}
+        <Text style={styles.welcomeText}>¡Bienvenido</Text>
+        <Text style={styles.welcomeText}>Donador!</Text>
+
+        <View style={styles.menuContainer}>
+          <View style={styles.menuRow}>
+            <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Perfil")}>
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="account-circle" size={40} color="#2196F3" />
+              </View>
+              <Text style={styles.menuText}>Perfil</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Donaciones Realizadas")}>
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="heart-multiple" size={40} color="#E91E63" />
+              </View>
+              <Text style={styles.menuText}>Donaciones{"\n"}Realizadas</Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
+
+          <View style={styles.menuRow}>
+            <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Eventos")}>
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="calendar-star" size={40} color="#FF5722" />
+              </View>
+              <Text style={styles.menuText}>Eventos</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Estatus Solicitudes")}>
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="clipboard-check" size={40} color="#00BCD4" />
+              </View>
+              <Text style={styles.menuText}>Estatus{"\n"}Solicitudes</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  containerWithBackground: {
+  container: {
     flex: 1,
   },
   backgroundImage: {
@@ -114,65 +111,61 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    paddingTop: 60,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
     paddingHorizontal: 20,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 30,
+    paddingTop: 60,
   },
   logoutButton: {
     position: "absolute",
-    top: -20,
-    right: 0,
-    backgroundColor: "white",
+    top: 60,
+    right: 20,
+    backgroundColor: "rgba(139, 69, 19, 0.8)",
     borderRadius: 20,
-    padding: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    padding: 10,
+    zIndex: 1,
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-  emailText: {
-    fontSize: 16,
-    color: "#666",
+    color: "#fff",
+    textAlign: "left",
+    textShadowColor: "rgba(0, 0, 0, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+    marginTop: 20,
   },
   menuContainer: {
     flex: 1,
+    justifyContent: "center",
+    paddingVertical: 40,
   },
-  menuGrid: {
+  menuRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
+    marginVertical: 10,
   },
-  menuItem: {
-    width: "48%",
-    backgroundColor: "white",
+  menuCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
+    padding: 15,
+    width: "47%",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+    minHeight: 120,
+    justifyContent: "center",
   },
   iconContainer: {
     marginBottom: 10,
   },
-  menuItemText: {
+  menuText: {
     fontSize: 16,
     fontWeight: "600",
     color: "#333",
     textAlign: "center",
+    lineHeight: 18,
   },
 })

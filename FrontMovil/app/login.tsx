@@ -1,49 +1,81 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native"
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  SafeAreaView,
+} from "react-native"
 import { Link, useRouter } from "expo-router"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { generateFastApiUrl } from "../utils"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { generateFastApiUrl } from "@/utils"
 
 import FondoImage from "../assets/images/fondo.jpg"
 import LogoImage from "../assets/images/logo.jpg"
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [formData, setFormData] = useState({
+    correo: "",
+    contraseña: "",
+  })
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Por favor, ingresa tu correo electrónico y contraseña.")
-      return
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const validateForm = () => {
+    if (!formData.correo || !formData.contraseña) {
+      Alert.alert("Error", "Por favor, completa todos los campos.")
+      return false
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.correo)) {
+      Alert.alert("Error", "Por favor, ingresa un correo electrónico válido.")
+      return false
+    }
+
+    return true
+  }
+
+  const handleLogin = async () => {
+    if (!validateForm()) return
 
     setLoading(true)
     try {
       const apiUrl = generateFastApiUrl("/auth/login")
-      console.log("Attempting login to:", apiUrl)
 
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ correo: email, contraseña: password }),
+        body: JSON.stringify({
+          correo: formData.correo,
+          contraseña: formData.contraseña,
+        }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        // Guardar el token
-        await AsyncStorage.setItem("userToken", data.access_token)
+        // Guardar token
+        await AsyncStorage.setItem("access_token", data.access_token)
 
-        // Obtener información del usuario para determinar su rol
-        const userInfoUrl = generateFastApiUrl("/auth/me")
-        const userResponse = await fetch(userInfoUrl, {
+        // Obtener información del usuario
+        const userResponse = await fetch(generateFastApiUrl("/auth/me"), {
           headers: {
             Authorization: `Bearer ${data.access_token}`,
           },
@@ -52,61 +84,48 @@ export default function LoginScreen() {
         if (userResponse.ok) {
           const userData = await userResponse.json()
 
-          // Verificar si el usuario está aprobado
-          if (!userData.aprobacion) {
-            Alert.alert(
-              "Cuenta Pendiente de Aprobación",
-              "Tu cuenta aún está siendo revisada por un administrador. Te notificaremos cuando sea aprobada.",
-              [
-                {
-                  text: "Entendido",
-                  onPress: async () => {
-                    // Limpiar token ya que no puede acceder
-                    await AsyncStorage.removeItem("userToken")
-                    router.replace("/")
-                  },
-                },
-              ],
-            )
-            return
-          }
+          // Guardar datos del usuario
+          await AsyncStorage.setItem("user_data", JSON.stringify(userData))
+          await AsyncStorage.setItem("user_name", userData.nombre)
+          await AsyncStorage.setItem("user_role", userData.rol_id.toString())
 
-          // Guardar información del usuario
-          await AsyncStorage.setItem("userData", JSON.stringify(userData))
-
-          Alert.alert("Éxito", "Inicio de sesión exitoso!")
-
-          // Redirigir al dashboard correspondiente según el rol
+          // Redirigir según el rol
           switch (userData.rol_id) {
-            case 1: // admin
+            case 1: // Admin
               router.replace("/dashboard/admin")
               break
-            case 4: // donante
+            case 2: // Donante
               router.replace("/dashboard/donante")
               break
-            case 5: // beneficiario
+            case 3: // Beneficiario
               router.replace("/dashboard/beneficiario")
               break
             default:
-              router.replace("/dashboard/usuario") // fallback
-              break
+              Alert.alert("Error", "Rol de usuario no reconocido.")
           }
         } else {
           Alert.alert("Error", "No se pudo obtener la información del usuario.")
         }
       } else {
-        Alert.alert("Error de inicio de sesión", data.detail || "Credenciales incorrectas.")
+        let errorMessage = "Credenciales incorrectas."
+
+        if (data.detail === "User account not approved") {
+          errorMessage = "Tu cuenta aún no ha sido aprobada por un administrador."
+        } else if (data.detail === "Incorrect email or password") {
+          errorMessage = "Correo electrónico o contraseña incorrectos."
+        }
+
+        Alert.alert("Error de inicio de sesión", errorMessage)
       }
     } catch (error: any) {
-      console.error("Error al iniciar sesión:", error)
-      Alert.alert("Error de conexión", "No se pudo conectar con el servidor. " + error.message)
+      Alert.alert("Error de conexión", "No se pudo conectar con el servidor.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <View style={styles.containerWithBackground}>
+    <SafeAreaView style={styles.container}>
       <Image source={FondoImage} style={styles.backgroundImage} resizeMode="cover" />
       <View style={styles.overlay}>
         <Link href="/" asChild>
@@ -116,16 +135,15 @@ export default function LoginScreen() {
         </Link>
 
         <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
-
-        <Text style={styles.title}>¡Bienvenido de nuevo!</Text>
+        <Text style={styles.title}>Iniciar Sesión</Text>
 
         <View style={styles.inputContainer}>
           <MaterialCommunityIcons name="email" size={20} color="#888" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Correo electrónico"
-            value={email}
-            onChangeText={setEmail}
+            value={formData.correo}
+            onChangeText={(value) => handleInputChange("correo", value)}
             keyboardType="email-address"
             autoCapitalize="none"
           />
@@ -136,8 +154,8 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="Contraseña"
-            value={password}
-            onChangeText={setPassword}
+            value={formData.contraseña}
+            onChangeText={(value) => handleInputChange("contraseña", value)}
             secureTextEntry
           />
         </View>
@@ -146,18 +164,23 @@ export default function LoginScreen() {
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>Iniciar Sesión</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity>
-          <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-        </TouchableOpacity>
+        <View style={styles.registerContainer}>
+          <Text style={styles.registerText}>¿No tienes cuenta? </Text>
+          <Link href="/register" asChild>
+            <TouchableOpacity>
+              <Text style={styles.registerLink}>Regístrate aquí</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
 
         <Text style={styles.footerText}>© 2025 MACRA Banco de Alimentos</Text>
       </View>
-    </View>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  containerWithBackground: {
+  container: {
     flex: 1,
   },
   backgroundImage: {
@@ -171,14 +194,14 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    justifyContent: "center",
     alignItems: "center",
-    paddingTop: 60,
     paddingHorizontal: 20,
   },
   backButton: {
     position: "absolute",
-    top: 40,
+    top: 60,
     left: 20,
     zIndex: 1,
     backgroundColor: "white",
@@ -191,10 +214,10 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 30,
+    marginBottom: 40,
   },
   inputContainer: {
     flexDirection: "row",
@@ -225,23 +248,32 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     width: "90%",
     alignItems: "center",
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 30,
   },
   loginButtonText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
   },
-  forgotPasswordText: {
+  registerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  registerText: {
     color: "#666",
-    fontSize: 15,
-    marginBottom: 20,
+    fontSize: 16,
+  },
+  registerLink: {
+    color: "#8B4513",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   footerText: {
-    position: "absolute",
-    bottom: 20,
     color: "#666",
     fontSize: 14,
+    position: "absolute",
+    bottom: 30,
   },
 })

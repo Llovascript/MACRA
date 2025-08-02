@@ -15,70 +15,145 @@ import {
 import { Link, useRouter } from "expo-router"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { Picker } from "@react-native-picker/picker"
-import { generateFastApiUrl } from "../utils"
+import { generateFastApiUrl } from "@/utils"
 
 import FondoImage from "../assets/images/fondo.jpg"
 import LogoImage from "../assets/images/logo.jpg"
 
-// Solo permitir roles de donante y beneficiario según la tabla de la base de datos
 const ROLES = [
   { label: "Seleccionar perfil", value: "" },
-  { label: "Donante", value: "4" }, // ID 4 según la tabla
-  { label: "Beneficiario", value: "5" }, // ID 5 según la tabla
+  { label: "Donante", value: "2" },
+  { label: "Beneficiario", value: "3" },
 ]
 
-const TIPOS = [
+const TIPOS_USUARIO = [
   { label: "Seleccionar tipo", value: "" },
-  { label: "Persona Física", value: "Persona Física" },
-  { label: "Persona Moral", value: "Persona Moral" },
+  { label: "Persona", value: "persona" },
+  { label: "Organización", value: "organizacion" },
 ]
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
     tipo: "",
     nombre: "",
-    ap: "", // apellido paterno
-    aM: "", // apellido materno
-    edad: "",
+    aP: "", // apellido paterno
+    aM: "", // apellido materno - ahora obligatorio
+    edad: "", // ahora obligatorio
     telefono: "",
     correo: "",
     contraseña: "",
-    rfc: "",
+    confirmarContraseña: "",
+    rfc: "", // ahora obligatorio
     paginaWeb: "",
-    fundacion: "",
     rol_id: "",
   })
-  const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const updateFormData = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const validateRFC = (rfc: string) => {
+    // Validación básica de RFC mexicano
+    const rfcRegex = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/
+    return rfcRegex.test(rfc)
+  }
+
+  const validateForm = () => {
+    const requiredFields = ["tipo", "nombre", "aP", "aM", "edad", "telefono", "correo", "contraseña", "rfc", "rol_id"]
+
+    for (const field of requiredFields) {
+      if (!formData[field as keyof typeof formData]) {
+        let fieldName = field
+        switch (field) {
+          case "aP":
+            fieldName = "Apellido Paterno"
+            break
+          case "aM":
+            fieldName = "Apellido Materno"
+            break
+          case "tipo":
+            fieldName = "Tipo de usuario"
+            break
+          case "rol_id":
+            fieldName = "Perfil"
+            break
+          case "rfc":
+            fieldName = "RFC"
+            break
+          default:
+            fieldName = field.charAt(0).toUpperCase() + field.slice(1)
+        }
+        Alert.alert("Error", `El campo ${fieldName} es obligatorio.`)
+        return false
+      }
+    }
+
+    if (formData.contraseña !== formData.confirmarContraseña) {
+      Alert.alert("Error", "Las contraseñas no coinciden.")
+      return false
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.correo)) {
+      Alert.alert("Error", "Por favor ingresa un correo electrónico válido.")
+      return false
+    }
+
+    // Validar teléfono (solo números)
+    const phoneRegex = /^[0-9]+$/
+    if (!phoneRegex.test(formData.telefono)) {
+      Alert.alert("Error", "El teléfono debe contener solo números.")
+      return false
+    }
+
+    // Validar edad
+    const edad = Number(formData.edad)
+    if (isNaN(edad) || edad < 1 || edad > 120) {
+      Alert.alert("Error", "La edad debe ser un número válido entre 1 y 120.")
+      return false
+    }
+
+    // Validar RFC
+    if (!validateRFC(formData.rfc)) {
+      Alert.alert("Error", "El RFC no tiene un formato válido. Debe tener 12 o 13 caracteres (ej: ABCD123456EFG).")
+      return false
+    }
+
+    return true
   }
 
   const handleRegister = async () => {
-    // Validaciones básicas
-    if (!formData.tipo || !formData.nombre || !formData.correo || !formData.contraseña || !formData.rol_id) {
-      Alert.alert("Error", "Por favor, completa todos los campos obligatorios.")
-      return
-    }
-    if (formData.contraseña !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden.")
-      return
-    }
+    if (!validateForm()) return
 
     setLoading(true)
     try {
       const apiUrl = generateFastApiUrl("/auth/register")
-      console.log("Attempting registration to:", apiUrl)
 
-      // Preparar datos para envío
-      const registrationData = {
-        ...formData,
-        rol_id: Number.parseInt(formData.rol_id),
-        edad: formData.edad ? Number.parseInt(formData.edad) : null,
-        aprobacion: false, // Por defecto no aprobado, requiere aprobación del admin
-        estatus_id: 1, // Asumiendo que 1 es "activo" o el estatus por defecto
+      // Preparar datos para enviar según el esquema UsuarioCreate
+      const { confirmarContraseña, ...dataToSend } = formData
+
+      const requestData = {
+        tipo: dataToSend.tipo,
+        nombre: dataToSend.nombre,
+        aP: dataToSend.aP,
+        aM: dataToSend.aM,
+        edad: Number(dataToSend.edad),
+        telefono: dataToSend.telefono,
+        correo: dataToSend.correo,
+        contraseña: dataToSend.contraseña,
+        rfc: dataToSend.rfc,
+        paginaWeb: dataToSend.paginaWeb || null,
+        fundacion: null,
+        rol_id: Number.parseInt(dataToSend.rol_id),
+        estatus_id: null,
+        direccion_id: null,
+        aprobacion: false,
       }
 
       const response = await fetch(apiUrl, {
@@ -86,7 +161,7 @@ export default function RegisterScreen() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(registrationData),
+        body: JSON.stringify(requestData),
       })
 
       const data = await response.json()
@@ -94,20 +169,34 @@ export default function RegisterScreen() {
       if (response.ok) {
         Alert.alert(
           "Registro Exitoso",
-          "Tu solicitud de registro ha sido enviada. Un administrador revisará y aprobará tu cuenta pronto. Te notificaremos cuando puedas iniciar sesión.",
+          "Tu cuenta ha sido creada exitosamente. Un administrador debe aprobar tu cuenta antes de que puedas iniciar sesión.",
           [
             {
-              text: "Entendido",
-              onPress: () => router.replace("/"),
+              text: "OK",
+              onPress: () => router.replace("/login"),
             },
           ],
         )
       } else {
-        Alert.alert("Error de registro", data.detail || "Ocurrió un error al registrarse.")
+        let errorMessage = "Ocurrió un error al registrarse."
+
+        if (typeof data.detail === "string") {
+          errorMessage = data.detail
+        } else if (Array.isArray(data.detail)) {
+          errorMessage = data.detail
+            .map((err: any) => {
+              const field = err.loc ? err.loc.join(".") : "campo"
+              return `${field}: ${err.msg}`
+            })
+            .join("\n")
+        } else if (data.message) {
+          errorMessage = data.message
+        }
+
+        Alert.alert("Error de registro", errorMessage)
       }
     } catch (error: any) {
-      console.error("Error al registrar:", error)
-      Alert.alert("Error de conexión", "No se pudo conectar con el servidor. " + error.message)
+      Alert.alert("Error de conexión", "No se pudo conectar con el servidor. Intenta nuevamente.")
     } finally {
       setLoading(false)
     }
@@ -116,7 +205,7 @@ export default function RegisterScreen() {
   return (
     <View style={styles.containerWithBackground}>
       <Image source={FondoImage} style={styles.backgroundImage} resizeMode="cover" />
-      <ScrollView style={styles.scrollContainer}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.overlay}>
           <Link href="/" asChild>
             <TouchableOpacity style={styles.backButton}>
@@ -128,7 +217,6 @@ export default function RegisterScreen() {
 
           <Text style={styles.title}>Crear nueva cuenta</Text>
 
-          {/* Tipo */}
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={formData.tipo}
@@ -136,14 +224,13 @@ export default function RegisterScreen() {
               style={styles.picker}
               itemStyle={styles.pickerItem}
             >
-              {TIPOS.map((tipo) => (
+              {TIPOS_USUARIO.map((tipo) => (
                 <Picker.Item key={tipo.value} label={tipo.label} value={tipo.value} />
               ))}
             </Picker>
             <MaterialCommunityIcons name="chevron-down" size={20} color="#888" style={styles.pickerIcon} />
           </View>
 
-          {/* Nombre */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="account" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
@@ -151,56 +238,54 @@ export default function RegisterScreen() {
               placeholder="Nombre *"
               value={formData.nombre}
               onChangeText={(value) => updateFormData("nombre", value)}
+              autoCapitalize="words"
             />
           </View>
 
-          {/* Apellido Paterno */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="account" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Apellido Paterno"
-              value={formData.ap}
-              onChangeText={(value) => updateFormData("ap", value)}
+              placeholder="Apellido Paterno *"
+              value={formData.aP}
+              onChangeText={(value) => updateFormData("aP", value)}
+              autoCapitalize="words"
             />
           </View>
 
-          {/* Apellido Materno */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="account" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Apellido Materno"
+              placeholder="Apellido Materno *"
               value={formData.aM}
               onChangeText={(value) => updateFormData("aM", value)}
+              autoCapitalize="words"
             />
           </View>
 
-          {/* Edad */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="calendar" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Edad"
+              placeholder="Edad *"
               value={formData.edad}
               onChangeText={(value) => updateFormData("edad", value)}
               keyboardType="numeric"
             />
           </View>
 
-          {/* Teléfono */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="phone" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Teléfono"
+              placeholder="Teléfono *"
               value={formData.telefono}
               onChangeText={(value) => updateFormData("telefono", value)}
               keyboardType="phone-pad"
             />
           </View>
 
-          {/* Correo */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="email" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
@@ -213,42 +298,30 @@ export default function RegisterScreen() {
             />
           </View>
 
-          {/* RFC */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="card-account-details" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="RFC"
+              placeholder="RFC *"
               value={formData.rfc}
               onChangeText={(value) => updateFormData("rfc", value.toUpperCase())}
               autoCapitalize="characters"
+              maxLength={13}
             />
           </View>
 
-          {/* Página Web */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="web" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Página Web"
+              placeholder="Página web (opcional)"
               value={formData.paginaWeb}
               onChangeText={(value) => updateFormData("paginaWeb", value)}
+              keyboardType="url"
               autoCapitalize="none"
             />
           </View>
 
-          {/* Fundación */}
-          <View style={styles.inputContainer}>
-            <MaterialCommunityIcons name="domain" size={20} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Fundación/Organización"
-              value={formData.fundacion}
-              onChangeText={(value) => updateFormData("fundacion", value)}
-            />
-          </View>
-
-          {/* Contraseña */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="lock" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
@@ -260,19 +333,17 @@ export default function RegisterScreen() {
             />
           </View>
 
-          {/* Confirmar Contraseña */}
           <View style={styles.inputContainer}>
             <MaterialCommunityIcons name="lock" size={20} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Confirmar contraseña *"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              value={formData.confirmarContraseña}
+              onChangeText={(value) => updateFormData("confirmarContraseña", value)}
               secureTextEntry
             />
           </View>
 
-          {/* Rol */}
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={formData.rol_id}
@@ -287,18 +358,13 @@ export default function RegisterScreen() {
             <MaterialCommunityIcons name="chevron-down" size={20} color="#888" style={styles.pickerIcon} />
           </View>
 
+          <Text style={styles.requiredText}>* Campos obligatorios</Text>
+
           <TouchableOpacity style={styles.registerButton} onPress={handleRegister} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.registerButtonText}>Enviar Solicitud</Text>
-            )}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.registerButtonText}>Registrarse</Text>}
           </TouchableOpacity>
 
-          <Text style={styles.infoText}>
-            * Campos obligatorios{"\n"}
-            Tu cuenta será revisada por un administrador antes de ser activada.
-          </Text>
+          <Text style={styles.infoText}>Tu cuenta será revisada por un administrador antes de ser aprobada.</Text>
 
           <Text style={styles.footerText}>© 2025 MACRA Banco de Alimentos</Text>
         </View>
@@ -320,16 +386,19 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  scrollContainer: {
+  scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   overlay: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    flex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     alignItems: "center",
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 40,
-    minHeight: "100%",
   },
   backButton: {
     position: "absolute",
@@ -359,7 +428,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     width: "90%",
-    height: 50,
+    minHeight: 50,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -373,6 +442,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333",
+    paddingVertical: 15,
   },
   pickerContainer: {
     flexDirection: "row",
@@ -402,6 +472,13 @@ const styles = StyleSheet.create({
     right: 15,
     top: 15,
   },
+  requiredText: {
+    color: "#666",
+    fontSize: 12,
+    marginBottom: 10,
+    alignSelf: "flex-start",
+    marginLeft: "5%",
+  },
   registerButton: {
     backgroundColor: "#8B4513",
     paddingVertical: 15,
@@ -409,7 +486,7 @@ const styles = StyleSheet.create({
     width: "90%",
     alignItems: "center",
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 15,
   },
   registerButtonText: {
     color: "white",
@@ -421,11 +498,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginBottom: 20,
-    lineHeight: 20,
+    paddingHorizontal: 20,
   },
   footerText: {
     color: "#666",
     fontSize: 14,
-    marginBottom: 20,
+    marginTop: 10,
   },
 })

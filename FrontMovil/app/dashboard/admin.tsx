@@ -1,22 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, Alert } from "react-native"
 import { useRouter } from "expo-router"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 import FondoImage from "../../assets/images/fondo.jpg"
 
-interface User {
-  id: number
-  correo: string
-  rol_id: number
-  // Agrega más campos según tu API
-}
-
 export default function AdminDashboard() {
-  const [user, setUser] = useState<User | null>(null)
+  const [userName, setUserName] = useState("")
   const router = useRouter()
 
   useEffect(() => {
@@ -25,9 +18,9 @@ export default function AdminDashboard() {
 
   const loadUserData = async () => {
     try {
-      const userData = await AsyncStorage.getItem("userData")
-      if (userData) {
-        setUser(JSON.parse(userData))
+      const name = await AsyncStorage.getItem("user_name")
+      if (name) {
+        setUserName(name)
       }
     } catch (error) {
       console.error("Error loading user data:", error)
@@ -35,14 +28,18 @@ export default function AdminDashboard() {
   }
 
   const handleLogout = async () => {
-    Alert.alert("Cerrar Sesión", "¿Estás seguro de que quieres cerrar sesión?", [
+    Alert.alert("Cerrar Sesión", "¿Estás seguro de que deseas cerrar sesión?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Cerrar Sesión",
+        style: "destructive",
         onPress: async () => {
-          await AsyncStorage.removeItem("userToken")
-          await AsyncStorage.removeItem("userData")
-          router.replace("/")
+          try {
+            await AsyncStorage.multiRemove(["access_token", "user_data", "user_name", "user_role"])
+            router.replace("/")
+          } catch (error) {
+            console.error("Error during logout:", error)
+          }
         },
       },
     ])
@@ -52,56 +49,57 @@ export default function AdminDashboard() {
     {
       title: "Solicitudes",
       icon: "clipboard-list",
-      onPress: () => Alert.alert("Solicitudes", "Funcionalidad en desarrollo"),
+      color: "#4CAF50",
+      onPress: () => router.push("/admin/solicitudes"),
     },
     {
       title: "Eventos",
-      icon: "calendar",
-      onPress: () => router.push("/dashboard/admin/eventos"),
+      icon: "calendar-star",
+      color: "#FF5722",
+      onPress: () => router.push("/admin/eventos"),
     },
     {
       title: "Donantes",
-      icon: "heart-outline",
-      onPress: () => Alert.alert("Donantes", "Funcionalidad en desarrollo"),
+      icon: "hand-heart",
+      color: "#E91E63",
+      onPress: () => router.push("/admin/donantes"),
     },
     {
       title: "Beneficiarios",
       icon: "account-group",
-      onPress: () => Alert.alert("Beneficiarios", "Funcionalidad en desarrollo"),
+      color: "#2196F3",
+      onPress: () => router.push("/admin/beneficiarios"),
     },
   ]
 
   return (
-    <View style={styles.containerWithBackground}>
+    <SafeAreaView style={styles.container}>
       <Image source={FondoImage} style={styles.backgroundImage} resizeMode="cover" />
       <View style={styles.overlay}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <MaterialCommunityIcons name="logout" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.welcomeText}>¡Bienvenido Administrador!</Text>
-          <Text style={styles.emailText}>{user?.correo}</Text>
-        </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <MaterialCommunityIcons name="logout" size={24} color="#fff" />
+        </TouchableOpacity>
 
-        <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.menuGrid}>
-            {menuItems.map((item, index) => (
-              <TouchableOpacity key={index} style={styles.menuItem} onPress={item.onPress}>
-                <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons name={item.icon as any} size={40} color="#8B4513" />
-                </View>
-                <Text style={styles.menuItemText}>{item.title}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+        <Text style={styles.welcomeText}>¡Bienvenido{"\n"}Administrador!</Text>
+        {userName ? <Text style={styles.nameText}>{userName}</Text> : null}
+
+        <View style={styles.menuContainer}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity key={index} style={styles.menuItem} onPress={item.onPress}>
+              <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
+                <MaterialCommunityIcons name={item.icon as any} size={32} color="#fff" />
+              </View>
+              <Text style={styles.menuText}>{item.title}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  containerWithBackground: {
+  container: {
     flex: 1,
   },
   backgroundImage: {
@@ -115,65 +113,68 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    paddingTop: 60,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
     paddingHorizontal: 20,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 30,
+    paddingTop: 60,
   },
   logoutButton: {
     position: "absolute",
-    top: -20,
-    right: 0,
-    backgroundColor: "white",
+    top: 60,
+    right: 20,
+    backgroundColor: "rgba(139, 69, 19, 0.8)",
     borderRadius: 20,
-    padding: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    padding: 10,
+    zIndex: 1,
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#333",
+    color: "#fff",
+    textAlign: "left",
+    marginTop: 40,
     marginBottom: 10,
+    textShadowColor: "rgba(0, 0, 0, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
-  emailText: {
-    fontSize: 16,
-    color: "#666",
+  nameText: {
+    fontSize: 18,
+    color: "#fff",
+    textAlign: "left",
+    marginBottom: 40,
+    textShadowColor: "rgba(0, 0, 0, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   menuContainer: {
     flex: 1,
-  },
-  menuGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "center",
   },
   menuItem: {
-    width: "48%",
-    backgroundColor: "white",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 15,
     padding: 20,
     marginBottom: 15,
-    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   iconContainer: {
-    marginBottom: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 20,
   },
-  menuItemText: {
-    fontSize: 16,
+  menuText: {
+    fontSize: 18,
     fontWeight: "600",
     color: "#333",
-    textAlign: "center",
+    flex: 1,
   },
 })
