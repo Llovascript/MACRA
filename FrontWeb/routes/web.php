@@ -6,6 +6,8 @@ use App\Http\Controllers\BeneficiarioPerfilController;
 use App\Http\Controllers\PerfilDonanteController;
 use App\Http\Controllers\UserDatabaseController;
 use App\Http\Controllers\SolicitudesPerfilesController;
+use App\Http\Controllers\SolicitudesDonacionesController;
+use App\Http\Controllers\DonacionesDatabaseController;
 
 // Rutas principales
 Route::get('/index', [UserController::class, 'showIndex'])->name('index');
@@ -36,6 +38,10 @@ Route::get('/adminSolicitudes', function () {
 Route::get('/solicitudesPerfiles', [SolicitudesPerfilesController::class, 'index'])
     ->name('solicitudesPerfiles');
 
+// Ruta para solicitudes de donaciones
+Route::get('/solicitudesDonaciones', [SolicitudesDonacionesController::class, 'index'])
+    ->name('solicitudesDonaciones');
+
 // Rutas Beneficiario
 Route::get('/menuBeneficiario', function () {
     return view('menuBeneficiario');
@@ -52,8 +58,9 @@ Route::get('/menuDonantes', function () {
 Route::get('/perfilDonante', [PerfilDonanteController::class, 'index'])
     ->name('perfilDonante');
 
-// Rutas de administración de usuarios (para desarrollo/testing)
+// Rutas de administración (para desarrollo/testing y gestión)
 Route::prefix('admin')->group(function () {
+    // Rutas para gestión de usuarios
     Route::get('/check-database', [UserDatabaseController::class, 'checkDatabase'])->name('check.database');
     Route::get('/create-test-user', [UserDatabaseController::class, 'createTestUser'])->name('create.test.user');
     Route::get('/create-test-donante', [UserDatabaseController::class, 'createTestDonante'])->name('create.test.donante');
@@ -64,4 +71,19 @@ Route::prefix('admin')->group(function () {
     Route::post('/solicitudes/{userId}/aprobar', [SolicitudesPerfilesController::class, 'aprobar'])->name('solicitudes.aprobar');
     Route::post('/solicitudes/{userId}/rechazar', [SolicitudesPerfilesController::class, 'rechazar'])->name('solicitudes.rechazar');
     Route::get('/solicitudes/estadisticas', [SolicitudesPerfilesController::class, 'estadisticas'])->name('solicitudes.estadisticas');
+    
+    // Rutas para testing y desarrollo de donaciones
+    Route::get('/donaciones/check-structure', [DonacionesDatabaseController::class, 'checkDonacionesStructure'])->name('donaciones.check.structure');
+    Route::get('/donaciones/check-data', [DonacionesDatabaseController::class, 'checkAvailableData'])->name('donaciones.check.data');
+    Route::get('/donaciones/create-categories', [DonacionesDatabaseController::class, 'createBasicCategories'])->name('donaciones.create.categories');
+    Route::get('/donaciones/create-unidades', [DonacionesDatabaseController::class, 'createBasicUnidades'])->name('donaciones.create.unidades');
+    Route::get('/donaciones/create-test', [DonacionesDatabaseController::class, 'createTestDonaciones'])->name('donaciones.create.test');
+    Route::get('/donaciones/get-completas', [DonacionesDatabaseController::class, 'getDonacionesCompletas'])->name('donaciones.get.completas');
+    Route::get('/donaciones/clear-test', [DonacionesDatabaseController::class, 'clearTestDonaciones'])->name('donaciones.clear.test');
+    Route::get('/donaciones/create-articulos', [DonacionesDatabaseController::class, 'createTestArticulos'])->name('donaciones.create.articulos');
+    
+    // Rutas para aprobar/rechazar donaciones (AJAX)
+    Route::post('/donaciones/{donacionId}/aprobar', [SolicitudesDonacionesController::class, 'aprobar'])->name('donaciones.aprobar');
+    Route::post('/donaciones/{donacionId}/rechazar', [SolicitudesDonacionesController::class, 'rechazar'])->name('donaciones.rechazar');
+    Route::get('/donaciones/estadisticas', [SolicitudesDonacionesController::class, 'estadisticas'])->name('donaciones.estadisticas');
 });
