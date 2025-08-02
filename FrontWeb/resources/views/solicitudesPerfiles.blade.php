@@ -7,6 +7,7 @@
     <title>Solicitudes de Perfiles</title>
     <link rel="stylesheet" href="{{ asset('css/solicitudes.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
 <body>
@@ -31,93 +32,36 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Registros de ejemplo para pruebas -->
-                    <tr class="pending">
-                        <td>Juan Carlos Pérez González</td>
-                        <td>juan.perez@email.com</td>
-                        <td>Donante Individual</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn accept-btn" title="Aceptar"
-                                    onclick="confirmarAccion('aceptar', this)">
-                                    <i class="fas fa-user-plus"></i>
-                                </button>
-                                <button class="action-btn reject-btn" title="Rechazar"
-                                    onclick="confirmarAccion('rechazar', this)">
-                                    <i class="fas fa-user-minus"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr class="pending">
-                        <td>María Elena Rodríguez Martínez</td>
-                        <td>maria.rodriguez@empresa.com</td>
-                        <td>Donante Corporativo</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn accept-btn" title="Aceptar"
-                                    onclick="confirmarAccion('aceptar', this)">
-                                    <i class="fas fa-user-plus"></i>
-                                </button>
-                                <button class="action-btn reject-btn" title="Rechazar"
-                                    onclick="confirmarAccion('rechazar', this)">
-                                    <i class="fas fa-user-minus"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr class="pending">
-                        <td>Luis Antonio Hernández López</td>
-                        <td>luis.hernandez@fundacion.org</td>
-                        <td>Fundación</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn accept-btn" title="Aceptar"
-                                    onclick="confirmarAccion('aceptar', this)">
-                                    <i class="fas fa-user-plus"></i>
-                                </button>
-                                <button class="action-btn reject-btn" title="Rechazar"
-                                    onclick="confirmarAccion('rechazar', this)">
-                                    <i class="fas fa-user-minus"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr class="pending">
-                        <td>Ana Sofía García Ramírez</td>
-                        <td>ana.garcia@voluntario.com</td>
-                        <td>Voluntario</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn accept-btn" title="Aceptar"
-                                    onclick="confirmarAccion('aceptar', this)">
-                                    <i class="fas fa-user-plus"></i>
-                                </button>
-                                <button class="action-btn reject-btn" title="Rechazar"
-                                    onclick="confirmarAccion('rechazar', this)">
-                                    <i class="fas fa-user-minus"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr class="pending">
-                        <td>Carlos Eduardo Morales Jiménez</td>
-                        <td>carlos.morales@email.mx</td>
-                        <td>Donante Individual</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn accept-btn" title="Aceptar"
-                                    onclick="confirmarAccion('aceptar', this)">
-                                    <i class="fas fa-user-plus"></i>
-                                </button>
-                                <button class="action-btn reject-btn" title="Rechazar"
-                                    onclick="confirmarAccion('rechazar', this)">
-                                    <i class="fas fa-user-minus"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Más filas pueden ser agregadas dinámicamente aquí -->
+                    @if (count($solicitudesPendientes) > 0)
+                        @foreach ($solicitudesPendientes as $solicitud)
+                            <tr class="pending" data-user-id="{{ $solicitud->id }}">
+                                <td>{{ $solicitud->nombre }} {{ $solicitud->apellido_paterno }}
+                                    {{ $solicitud->apellido_materno }}</td>
+                                <td>{{ $solicitud->correo }}</td>
+                                <td>{{ ucfirst($solicitud->rol_nombre) }}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn accept-btn" title="Aceptar"
+                                            onclick="confirmarAccion('aceptar', this, {{ $solicitud->id }})">
+                                            <i class="fas fa-user-plus"></i>
+                                        </button>
+                                        <button class="action-btn reject-btn" title="Rechazar"
+                                            onclick="confirmarAccion('rechazar', this, {{ $solicitud->id }})">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @else
+                        <!-- Registros de ejemplo cuando no hay datos reales -->
+                        <tr class="pending">
+                            <td>No hay solicitudes pendientes</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -157,10 +101,21 @@
     <script>
         let accionActual = '';
         let filaActual = null;
+        let userIdActual = null;
 
-        function confirmarAccion(accion, boton) {
+        // Configurar CSRF token para todas las peticiones AJAX
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        function confirmarAccion(accion, boton, userId) {
+            // Si no hay userId, usar la funcionalidad original (datos de ejemplo)
+            if (!userId) {
+                confirmarAccionOriginal(accion, boton);
+                return;
+            }
+
             accionActual = accion;
             filaActual = boton.closest('tr');
+            userIdActual = userId;
 
             const modal = document.getElementById('confirmModal');
             const modalTitle = document.getElementById('modalTitle');
@@ -185,11 +140,100 @@
         function procesarAccion() {
             cerrarModal();
 
-            // Simular procesamiento (aquí iría tu lógica de backend)
-            setTimeout(() => {
-                mostrarNotificacion();
-                actualizarFila();
-            }, 500);
+            // Si es con userId real, procesar con backend
+            if (userIdActual) {
+                procesarAccionReal();
+            } else {
+                // Funcionalidad original para datos de ejemplo
+                setTimeout(() => {
+                    mostrarNotificacion();
+                    actualizarFila();
+                }, 500);
+            }
+        }
+
+        function procesarAccionReal() {
+            // Deshabilitar la fila mientras se procesa
+            if (filaActual) {
+                filaActual.style.opacity = '0.6';
+                filaActual.style.pointerEvents = 'none';
+            }
+
+            const url = accionActual === 'aceptar' ?
+                `/admin/solicitudes/${userIdActual}/aprobar` :
+                `/admin/solicitudes/${userIdActual}/rechazar`;
+
+            fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarNotificacion();
+                        // Remover la fila después de mostrar notificación
+                        setTimeout(() => {
+                            if (filaActual) {
+                                filaActual.style.transition = 'opacity 0.5s ease';
+                                filaActual.style.opacity = '0';
+                                setTimeout(() => {
+                                    filaActual.remove();
+                                    // Si no quedan filas, recargar la página
+                                    const tbody = document.querySelector('.solicitudes-table tbody');
+                                    if (tbody && tbody.children.length === 0) {
+                                        location.reload();
+                                    }
+                                }, 500);
+                            }
+                        }, 1500);
+                    } else {
+                        mostrarNotificacionError(data.message || 'Error al procesar la solicitud');
+                        // Rehabilitar la fila en caso de error
+                        if (filaActual) {
+                            filaActual.style.opacity = '1';
+                            filaActual.style.pointerEvents = 'auto';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarNotificacionError('Error de conexión. Intente nuevamente.');
+
+                    // Rehabilitar la fila en caso de error
+                    if (filaActual) {
+                        filaActual.style.opacity = '1';
+                        filaActual.style.pointerEvents = 'auto';
+                    }
+                });
+        }
+
+        // Funciones originales para mantener compatibilidad
+        function confirmarAccionOriginal(accion, boton) {
+            accionActual = accion;
+            filaActual = boton.closest('tr');
+            userIdActual = null;
+
+            const modal = document.getElementById('confirmModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            if (accion === 'aceptar') {
+                modalTitle.textContent = 'Confirmar Aceptación';
+                modalMessage.textContent = '¿Está seguro que desea aceptar esta solicitud de perfil?';
+                confirmBtn.textContent = 'Aceptar Solicitud';
+                confirmBtn.className = 'btn btn-confirm accept';
+            } else {
+                modalTitle.textContent = 'Confirmar Rechazo';
+                modalMessage.textContent = '¿Está seguro que desea rechazar esta solicitud de perfil?';
+                confirmBtn.textContent = 'Rechazar Solicitud';
+                confirmBtn.className = 'btn btn-confirm reject';
+            }
+
+            modal.style.display = 'flex';
         }
 
         function mostrarNotificacion() {
@@ -206,6 +250,18 @@
                 icon.style.color = '#dc3545';
                 message.textContent = 'Solicitud rechazada exitosamente';
             }
+
+            modal.style.display = 'flex';
+        }
+
+        function mostrarNotificacionError(mensaje) {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('notificationIcon');
+            const message = document.getElementById('notificationMessage');
+
+            icon.className = 'fas fa-times-circle';
+            icon.style.color = '#dc3545';
+            message.textContent = mensaje;
 
             modal.style.display = 'flex';
         }

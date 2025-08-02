@@ -172,6 +172,128 @@ class UserDatabaseController extends Controller
     }
 
     /**
+     * Crear usuarios pendientes de aprobación para testing
+     */
+    public function createTestPendingUsers()
+    {
+        try {
+            $db = $this->getConnection();
+
+            $usersPendientes = [
+                [
+                    'tipo' => 'Persona Física',
+                    'nombre' => 'Carlos Eduardo',
+                    'aP' => 'Morales',
+                    'aM' => 'Jiménez',
+                    'edad' => 28,
+                    'telefono' => '5551112233',
+                    'correo' => 'carlos.morales@email.mx',
+                    'contraseña' => $this->hashPassword('carlos123'),
+                    'rfc' => 'MOJC950315XYZ',
+                    'paginaWeb' => '',
+                    'fundacion' => '2024-08-01',
+                    'aprobacion' => 0, // PENDIENTE
+                    'del' => 0,
+                    'rol_id' => 2, // Donante
+                    'estatus_id' => 1,
+                    'direccion_id' => 1
+                ],
+                [
+                    'tipo' => 'Persona Física',
+                    'nombre' => 'Ana Sofía',
+                    'aP' => 'García',
+                    'aM' => 'Ramírez',
+                    'edad' => 32,
+                    'telefono' => '5554445566',
+                    'correo' => 'ana.garcia@voluntario.com',
+                    'contraseña' => $this->hashPassword('ana123'),
+                    'rfc' => 'GARA871205ABC',
+                    'paginaWeb' => 'https://voluntarios.org',
+                    'fundacion' => '2024-08-01',
+                    'aprobacion' => 0, // PENDIENTE
+                    'del' => 0,
+                    'rol_id' => 3, // Beneficiario
+                    'estatus_id' => 1,
+                    'direccion_id' => 1
+                ],
+                [
+                    'tipo' => 'Persona Moral',
+                    'nombre' => 'Luis Antonio',
+                    'aP' => 'Hernández',
+                    'aM' => 'López',
+                    'edad' => 45,
+                    'telefono' => '5557778899',
+                    'correo' => 'luis.hernandez@fundacion.org',
+                    'contraseña' => $this->hashPassword('luis123'),
+                    'rfc' => 'HELL790822DEF',
+                    'paginaWeb' => 'https://fundacion-luis.org',
+                    'fundacion' => '2024-08-02',
+                    'aprobacion' => 0, // PENDIENTE
+                    'del' => 0,
+                    'rol_id' => 2, // Donante
+                    'estatus_id' => 1,
+                    'direccion_id' => 1
+                ]
+            ];
+
+            $createdUsers = [];
+            $errors = [];
+
+            foreach ($usersPendientes as $userData) {
+                // Verificar que no exista el usuario
+                $existingUser = $db->table('usuarios')
+                    ->where('correo', $userData['correo'])
+                    ->first();
+
+                if ($existingUser) {
+                    $errors[] = "Usuario con correo {$userData['correo']} ya existe";
+                    continue;
+                }
+
+                // Verificar IDs de referencia
+                $validations = $this->validateReferenceIds($userData);
+                if (!$validations['valid']) {
+                    $errors[] = $validations['message'];
+                    continue;
+                }
+
+                $userId = $db->table('usuarios')->insertGetId($userData);
+                
+                $createdUsers[] = [
+                    'id' => $userId,
+                    'nombre' => $userData['nombre'] . ' ' . $userData['aP'],
+                    'correo' => $userData['correo'],
+                    'rol' => $userData['rol_id'] == 2 ? 'Donante' : 'Beneficiario'
+                ];
+
+                Log::info('Usuario pendiente creado', [
+                    'user_id' => $userId,
+                    'correo' => $userData['correo']
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuarios pendientes creados exitosamente',
+                'created_users' => $createdUsers,
+                'errors' => $errors,
+                'summary' => [
+                    'total_creados' => count($createdUsers),
+                    'total_errores' => count($errors)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error creando usuarios pendientes: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear usuarios pendientes: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Verificar estructura de la base de datos
      */
     public function checkDatabase()
