@@ -26,7 +26,7 @@
         <main class="main-content">
             <div class="modules-container">
                 <!-- Módulo Perfiles -->
-                <div class="module-card" onclick="#">
+                <div class="module-card" onclick="window.location.href='{{ route('solicitudesPerfiles') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="images/Perfiles.png" alt="Perfiles" class="icon-img">
