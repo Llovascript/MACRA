@@ -122,8 +122,8 @@
                             <i class="fas fa-building"></i>
                             <select id="register-tipo-entidad" name="tipo_entidad" required>
                                 <option value="" disabled selected>Seleccionar tipo de entidad</option>
-                                <option value="persona_fisica">Persona</option>
-                                <option value="persona_moral">Organización</option>
+                                <option value="persona">Persona</option>
+                                <option value="organizacion">Organización</option>
                             </select>
                         </div>
                     </div>
@@ -146,7 +146,7 @@
                     </div>
 
                     <input type="hidden" name="rol_id" value="1" />
-                    <input type="submit" class="btn" value="Regístrate" />
+                    <input type="submit" class="btn" value="SIGN UP" />
                     <div id="register-error" class="error-message" style="display: none;"></div>
                     <div id="register-success" class="success-message" style="display: none;"></div>
                     <p class="social-text">O regístrate con plataformas sociales</p>

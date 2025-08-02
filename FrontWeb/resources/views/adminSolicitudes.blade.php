@@ -36,7 +36,7 @@
                 </div>
 
                 <!-- Módulo Donaciones -->
-                <div class="module-card" onclick="#">
+                <div class="module-card" onclick="window.location.href='{{ route('solicitudesDonaciones') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="images/Donaciones.png" alt="Donaciones" class="icon-img">

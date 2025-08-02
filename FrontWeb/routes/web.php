@@ -18,48 +18,49 @@ Route::get('/login', [UserController::class, 'showLoginRegister'])->name('login.
 Route::post('/auth/login', [UserController::class, 'login'])->name('api.login');
 Route::post('/auth/register', [UserController::class, 'register'])->name('api.register');
 
-// Rutas protegidas
+// Ruta de logout
+Route::post('/logout', [UserController::class, 'logout'])->name('logout');
+
+// RUTAS TEMPORALES PARA CREAR ROLES
+Route::get('/create-roles', [UserController::class, 'createRoles'])->name('create.roles');
+Route::get('/check-roles', [UserController::class, 'checkRoles'])->name('check.roles');
+
+// Rutas protegidas - Dashboard genérico
 Route::middleware(['auth.check'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
 });
 
-// Ruta de logout
-Route::post('/logout', [UserController::class, 'logout'])->name('logout');
+// Rutas de Administrador - PROTEGIDAS
+Route::middleware(['auth.check'])->group(function () {
+    Route::get('/menuAdmin', [UserController::class, 'menuAdmin'])->name('admin.menu');
+    Route::get('/adminSolicitudes', function () {
+        return view('adminSolicitudes');
+    })->name('adminSolicitudes');
+    
+    Route::get('/solicitudesPerfiles', [SolicitudesPerfilesController::class, 'index'])
+        ->name('solicitudesPerfiles');
+    
+    // Ruta para solicitudes de donaciones
+    Route::get('/solicitudesDonaciones', [SolicitudesDonacionesController::class, 'index'])
+        ->name('solicitudesDonaciones');
+});
 
-// Rutas Administrador
-Route::get('/menuAdmin', function () {
-    return view('menuAdmin');
-})->name('admin.menu');
+// Rutas de Beneficiario - PROTEGIDAS
+Route::middleware(['auth.check'])->group(function () {
+    Route::get('/menuBeneficiario', [UserController::class, 'menuBeneficiario'])->name('beneficiario.menu');
+    Route::get('/perfilBeneficiario', [BeneficiarioPerfilController::class, 'index'])
+        ->name('perfilBeneficiario');
+});
 
-Route::get('/adminSolicitudes', function () {
-    return view('adminSolicitudes');
-})->name('adminSolicitudes');
+// Rutas de Donantes - PROTEGIDAS
+Route::middleware(['auth.check'])->group(function () {
+    Route::get('/menuDonantes', [UserController::class, 'menuDonantes'])->name('donante.menu');
+    Route::get('/perfilDonante', [PerfilDonanteController::class, 'index'])
+        ->name('perfilDonante');
+});
 
-Route::get('/solicitudesPerfiles', [SolicitudesPerfilesController::class, 'index'])
-    ->name('solicitudesPerfiles');
-
-// Ruta para solicitudes de donaciones
-Route::get('/solicitudesDonaciones', [SolicitudesDonacionesController::class, 'index'])
-    ->name('solicitudesDonaciones');
-
-// Rutas Beneficiario
-Route::get('/menuBeneficiario', function () {
-    return view('menuBeneficiario');
-})->name('beneficiario.menu');
-
-Route::get('/perfilBeneficiario', [BeneficiarioPerfilController::class, 'index'])
-    ->name('perfilBeneficiario');
-
-// Rutas Donadores
-Route::get('/menuDonantes', function () {
-    return view('menuDonantes');
-})->name('donante.menu');
-
-Route::get('/perfilDonante', [PerfilDonanteController::class, 'index'])
-    ->name('perfilDonante');
-
-// Rutas de administración (para desarrollo/testing y gestión)
-Route::prefix('admin')->group(function () {
+// Rutas de administración (para desarrollo/testing y gestión) - SOLO ADMIN
+Route::middleware(['auth.check'])->prefix('admin')->group(function () {
     // Rutas para gestión de usuarios
     Route::get('/check-database', [UserDatabaseController::class, 'checkDatabase'])->name('check.database');
     Route::get('/create-test-user', [UserDatabaseController::class, 'createTestUser'])->name('create.test.user');

@@ -14,7 +14,7 @@
     <div class="container">
         <!-- Header con botón de regreso -->
         <div class="header">
-            <a href="{{ route('beneficiario.menu') }}" class="back-btn">
+            <a href="{{ route('adminSolicitudes') }}" class="back-btn">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <h1 class="title">Solicitudes de Donaciones</h1>
