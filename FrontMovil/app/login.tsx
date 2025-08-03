@@ -4,77 +4,69 @@ import { useState } from "react"
 import {
   View,
   Text,
-  StyleSheet,
-  Image,
   TextInput,
   TouchableOpacity,
+  StyleSheet,
   Alert,
   ActivityIndicator,
-  SafeAreaView,
+  ImageBackground,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native"
-import { Link, useRouter } from "expo-router"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { useRouter } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { generateFastApiUrl } from "@/utils"
 
-import FondoImage from "../assets/images/fondo.jpg"
-import LogoImage from "../assets/images/logo.jpg"
-
 export default function LoginScreen() {
-  const [formData, setFormData] = useState({
-    correo: "",
-    contraseña: "",
-  })
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
-
-  const validateForm = () => {
-    if (!formData.correo || !formData.contraseña) {
-      Alert.alert("Error", "Por favor, completa todos los campos.")
-      return false
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.correo)) {
-      Alert.alert("Error", "Por favor, ingresa un correo electrónico válido.")
-      return false
-    }
-
-    return true
-  }
-
   const handleLogin = async () => {
-    if (!validateForm()) return
+    if (!email || !password) {
+      Alert.alert("Error", "Por favor ingresa email y contraseña")
+      return
+    }
 
     setLoading(true)
     try {
-      const apiUrl = generateFastApiUrl("/auth/login")
+      console.log("=== INICIANDO LOGIN ===")
+      console.log("Email:", email)
+      console.log("URL:", generateFastApiUrl("/auth/login"))
 
-      const response = await fetch(apiUrl, {
+      const loginData = {
+        correo: email,
+        contraseña: password,
+      }
+
+      console.log("Login data:", loginData)
+
+      const response = await fetch(generateFastApiUrl("/auth/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          correo: formData.correo,
-          contraseña: formData.contraseña,
-        }),
+        body: JSON.stringify(loginData),
       })
 
-      const data = await response.json()
+      console.log("Response status:", response.status)
 
       if (response.ok) {
-        // Guardar token
-        await AsyncStorage.setItem("access_token", data.access_token)
+        const data = await response.json()
+        console.log("Login response:", data)
 
-        // Obtener información del usuario
+        // Guardar token
+        await AsyncStorage.setItem("token", data.access_token)
+        console.log("Token guardado exitosamente")
+
+        // Verificar que se guardó
+        const savedToken = await AsyncStorage.getItem("token")
+        console.log("Token verificado:", savedToken ? "✅ Existe" : "❌ No existe")
+
+        // Obtener datos del usuario
         const userResponse = await fetch(generateFastApiUrl("/auth/me"), {
           headers: {
             Authorization: `Bearer ${data.access_token}`,
@@ -83,197 +75,197 @@ export default function LoginScreen() {
 
         if (userResponse.ok) {
           const userData = await userResponse.json()
+          console.log("User data:", userData)
 
           // Guardar datos del usuario
-          await AsyncStorage.setItem("user_data", JSON.stringify(userData))
-          await AsyncStorage.setItem("user_name", userData.nombre)
-          await AsyncStorage.setItem("user_role", userData.rol_id.toString())
+          await AsyncStorage.setItem("user", JSON.stringify(userData))
 
           // Redirigir según el rol
-          switch (userData.rol_id) {
-            case 1: // Admin
-              router.replace("/dashboard/admin")
-              break
-            case 2: // Donante
-              router.replace("/dashboard/donante")
-              break
-            case 3: // Beneficiario
-              router.replace("/dashboard/beneficiario")
-              break
-            default:
-              Alert.alert("Error", "Rol de usuario no reconocido.")
+          if (userData.rol_id === 1) {
+            router.replace("/dashboard/admin")
+          } else if (userData.rol_id === 2) {
+            router.replace("/dashboard/donante")
+          } else if (userData.rol_id === 3) {
+            router.replace("/dashboard/beneficiario")
+          } else {
+            router.replace("/dashboard/admin") // Por defecto
           }
         } else {
-          Alert.alert("Error", "No se pudo obtener la información del usuario.")
+          Alert.alert("Error", "No se pudieron obtener los datos del usuario")
         }
       } else {
-        let errorMessage = "Credenciales incorrectas."
-
-        if (data.detail === "User account not approved") {
-          errorMessage = "Tu cuenta aún no ha sido aprobada por un administrador."
-        } else if (data.detail === "Incorrect email or password") {
-          errorMessage = "Correo electrónico o contraseña incorrectos."
-        }
-
-        Alert.alert("Error de inicio de sesión", errorMessage)
+        const errorData = await response.text()
+        console.error("Error response:", errorData)
+        Alert.alert("Error", "Credenciales incorrectas")
       }
-    } catch (error: any) {
-      Alert.alert("Error de conexión", "No se pudo conectar con el servidor.")
+    } catch (error) {
+      console.error("Login error:", error)
+      Alert.alert(
+        "Error de conexión",
+        "No se pudo conectar con el servidor. Verifica:\n1. Que el servidor FastAPI esté ejecutándose\n2. Tu conexión a internet\n3. La dirección IP en utils.ts",
+      )
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Image source={FondoImage} style={styles.backgroundImage} resizeMode="cover" />
-      <View style={styles.overlay}>
-        <Link href="/" asChild>
-          <TouchableOpacity style={styles.backButton}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
-          </TouchableOpacity>
-        </Link>
+    <ImageBackground source={require("@/assets/images/fondo.jpg")} style={styles.background}>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+          <View style={styles.logoContainer}>
+            <Image source={require("@/assets/images/logo.jpg")} style={styles.logo} />
+            <Text style={styles.title}>MACRA</Text>
+            <Text style={styles.subtitle}>Manejo de Alimentos y Caridad Responsable</Text>
+          </View>
 
-        <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Iniciar Sesión</Text>
+          <View style={styles.formContainer}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Correo electrónico"
+                placeholderTextColor="#999"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
 
-        <View style={styles.inputContainer}>
-          <MaterialCommunityIcons name="email" size={20} color="#888" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Correo electrónico"
-            value={formData.correo}
-            onChangeText={(value) => handleInputChange("correo", value)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Contraseña"
+                placeholderTextColor="#999"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
 
-        <View style={styles.inputContainer}>
-          <MaterialCommunityIcons name="lock" size={20} color="#888" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            value={formData.contraseña}
-            onChangeText={(value) => handleInputChange("contraseña", value)}
-            secureTextEntry
-          />
-        </View>
-
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>Iniciar Sesión</Text>}
-        </TouchableOpacity>
-
-        <View style={styles.registerContainer}>
-          <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-          <Link href="/register" asChild>
-            <TouchableOpacity>
-              <Text style={styles.registerLink}>Regístrate aquí</Text>
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+              )}
             </TouchableOpacity>
-          </Link>
-        </View>
 
-        <Text style={styles.footerText}>© 2025 MACRA Banco de Alimentos</Text>
-      </View>
-    </SafeAreaView>
+            <TouchableOpacity style={styles.registerLink} onPress={() => router.push("/register")}>
+              <Text style={styles.registerText}>¿No tienes cuenta? Regístrate aquí</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   )
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    resizeMode: "cover",
+  },
   container: {
     flex: 1,
   },
-  backgroundImage: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    bottom: 0,
-    right: 0,
-    width: "100%",
-    height: "100%",
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    padding: 20,
   },
-  backButton: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    zIndex: 1,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 8,
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 40,
   },
   logo: {
     width: 120,
     height: 120,
-    marginBottom: 30,
+    borderRadius: 60,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "#333",
-    marginBottom: 40,
+    color: "#8B4513",
+    marginBottom: 8,
+    textShadowColor: "rgba(255, 255, 255, 0.8)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#5D4E37",
+    textAlign: "center",
+    fontWeight: "500",
+    textShadowColor: "rgba(255, 255, 255, 0.8)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  formContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 20,
+    padding: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 25,
-    paddingHorizontal: 15,
     marginBottom: 20,
-    width: "90%",
-    height: 50,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  inputIcon: {
-    marginRight: 10,
   },
   input: {
-    flex: 1,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 16,
     color: "#333",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   loginButton: {
     backgroundColor: "#8B4513",
-    paddingVertical: 15,
-    borderRadius: 25,
-    width: "90%",
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 30,
+    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   loginButtonText: {
-    color: "white",
+    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
-  registerContainer: {
-    flexDirection: "row",
+  registerLink: {
+    marginTop: 20,
     alignItems: "center",
-    marginBottom: 30,
   },
   registerText: {
-    color: "#666",
-    fontSize: 16,
-  },
-  registerLink: {
     color: "#8B4513",
     fontSize: 16,
-    fontWeight: "bold",
-  },
-  footerText: {
-    color: "#666",
-    fontSize: 14,
-    position: "absolute",
-    bottom: 30,
+    fontWeight: "500",
   },
 })

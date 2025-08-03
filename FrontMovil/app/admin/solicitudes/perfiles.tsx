@@ -43,7 +43,7 @@ export default function SolicitudesPerfiles() {
 
   const fetchUsuarios = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token")
+      const token = await AsyncStorage.getItem("token")
 
       if (!token) {
         Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
@@ -67,7 +67,7 @@ export default function SolicitudesPerfiles() {
         setTotalPages(Math.ceil(usuariosPendientes.length / itemsPerPage))
       } else if (response.status === 401) {
         Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
-        await AsyncStorage.removeItem("access_token")
+        await AsyncStorage.removeItem("token")
         router.replace("/login")
       } else {
         Alert.alert("Error", "No se pudieron cargar los usuarios")
@@ -87,7 +87,7 @@ export default function SolicitudesPerfiles() {
         text: "Aprobar",
         onPress: async () => {
           try {
-            const token = await AsyncStorage.getItem("access_token")
+            const token = await AsyncStorage.getItem("token")
 
             const response = await fetch(generateFastApiUrl(`/usuarios/${usuario.id}`), {
               method: "PUT",
@@ -126,7 +126,7 @@ export default function SolicitudesPerfiles() {
           style: "destructive",
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem("access_token")
+              const token = await AsyncStorage.getItem("token")
 
               const response = await fetch(generateFastApiUrl(`/usuarios/${usuario.id}`), {
                 method: "PUT",

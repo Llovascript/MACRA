@@ -71,7 +71,7 @@ export default function SolicitudesDonaciones() {
 
   const fetchDonaciones = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token")
+      const token = await AsyncStorage.getItem("token")
       if (!token) {
         Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
         router.replace("/login")
@@ -96,7 +96,7 @@ export default function SolicitudesDonaciones() {
         setTotalPages(Math.ceil(donacionesPendientes.length / itemsPerPage))
       } else if (response.status === 401) {
         Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
-        await AsyncStorage.removeItem("access_token")
+        await AsyncStorage.removeItem("token")
         router.replace("/login")
       } else {
         const errorData = await response.json()
@@ -135,7 +135,7 @@ export default function SolicitudesDonaciones() {
 
   const updateDonacionStatus = async (donacionId: number, aprobacion: boolean) => {
     try {
-      const token = await AsyncStorage.getItem("access_token")
+      const token = await AsyncStorage.getItem("token")
       if (!token) {
         Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
         router.replace("/login")
@@ -168,7 +168,7 @@ export default function SolicitudesDonaciones() {
         fetchDonaciones() // Recargar la lista
       } else if (response.status === 401) {
         Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
-        await AsyncStorage.removeItem("access_token")
+        await AsyncStorage.removeItem("token")
         router.replace("/login")
       } else {
         const errorData = await response.json()
