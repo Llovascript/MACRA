@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from models import Usuario, Evento, EstatusG, BeneficiarioEvento
-from schemas import EventoCreate, EventoResponse
+from models import Usuario, Evento, EstatusG, BeneficiarioEvento, DonanteEvento
+from schemas import EventoCreate, EventoResponse, DonanteEventoResponse, BeneficiarioEventoResponse
 from dependencies import require_role, get_current_active_user
 
 router = APIRouter(prefix="/eventos", tags=["eventos"])
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/eventos", tags=["eventos"])
 def create_evento(
     evento: EventoCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     estatus = db.query(EstatusG).filter(EstatusG.id == evento.estatus_id).first()
     if not estatus:
@@ -42,7 +42,7 @@ def update_evento(
     evento_id: int, 
     evento_update: EventoCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     evento = db.query(Evento).filter(
         Evento.id == evento_id,
@@ -69,7 +69,7 @@ def add_beneficiario(
     evento_id: int,
     beneficiario_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     evento = db.query(Evento).filter(
         Evento.id == evento_id,
@@ -112,7 +112,7 @@ def remove_beneficiario(
     evento_id: int,
     beneficiario_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     relation = db.query(BeneficiarioEvento).filter(
         BeneficiarioEvento.evento_id == evento_id,
@@ -129,3 +129,79 @@ def remove_beneficiario(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error removiendo beneficiario")
+
+@router.delete("/{evento_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_evento(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["admin"]))
+):
+    evento = db.query(Evento).filter(
+        Evento.id == evento_id,
+        Evento.del_flag == False
+    ).first()
+    
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento no encontrado")
+    
+    evento.del_flag = True
+    try:
+        db.commit()
+        return {"message": "Evento eliminado exitosamente"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Error eliminando evento")
+
+@router.post("/{evento_id}/unirse_como_donante", response_model=DonanteEventoResponse)
+def join_event_as_donante(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["donante"]))
+):
+    evento = db.query(Evento).filter(Evento.id == evento_id, Evento.del_flag == False).first()
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento no encontrado")
+
+    existing_entry = db.query(DonanteEvento).filter(
+        DonanteEvento.evento_id == evento_id,
+        DonanteEvento.donante_id == current_user.id
+    ).first()
+    if existing_entry:
+        raise HTTPException(status_code=409, detail="Ya estás unido a este evento como donante")
+
+    new_entry = DonanteEvento(evento_id=evento_id, donante_id=current_user.id)
+    db.add(new_entry)
+    try:
+        db.commit()
+        db.refresh(new_entry)
+        return new_entry
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Error al unirse al evento como donante")
+
+@router.post("/{evento_id}/unirse_como_beneficiario", response_model=BeneficiarioEventoResponse)
+def join_event_as_beneficiario(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["beneficiario"]))
+):
+    evento = db.query(Evento).filter(Evento.id == evento_id, Evento.del_flag == False).first()
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento no encontrado")
+
+    existing_entry = db.query(BeneficiarioEvento).filter(
+        BeneficiarioEvento.evento_id == evento_id,
+        BeneficiarioEvento.beneficiario_id == current_user.id
+    ).first()
+    if existing_entry:
+        raise HTTPException(status_code=409, detail="Ya estás unido a este evento como beneficiario")
+
+    new_entry = BeneficiarioEvento(evento_id=evento_id, beneficiario_id=current_user.id)
+    db.add(new_entry)
+    try:
+        db.commit()
+        db.refresh(new_entry)
+        return new_entry
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Error al unirse al evento como beneficiario")

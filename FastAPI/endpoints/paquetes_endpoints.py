@@ -11,7 +11,7 @@ router = APIRouter(prefix="/paquetes", tags=["paquetes"])
 def create_paquete(
     paquete: PaqueteCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     db_paquete = Paquete(**paquete.dict())
     db.add(db_paquete)

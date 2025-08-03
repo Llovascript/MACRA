@@ -1,0 +1,358 @@
+/* Reset y estilos base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8fafc;
+    overflow-x: hidden;
+}
+
+/* Container principal */
+.dashboard-container {
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Botón de cerrar sesión */
+.logout-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.logout-form {
+    margin: 0;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn:hover {
+    background: rgba(220, 38, 38, 0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.logout-icon {
+    width: 18px;
+    height: 18px;
+}
+
+/* Hero Section - Admin (4 módulos) */
+.hero-section.admin {
+    background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('../images/menuAdmin.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Hero Section - Beneficiario (3 módulos) */
+.hero-section.beneficiario {
+    background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('../images/menuBeneficiario.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Hero Section - Donador (4 módulos) */
+.hero-section.donador {
+    background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('../images/menuDonante.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Título de bienvenida */
+.welcome-title {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.welcome-title h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Grid de módulos - Admin (4 módulos) */
+.modules-grid.admin {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    max-width: 1400px;
+    width: 100%;
+}
+
+/* Grid de módulos - Donador (4 módulos) */
+.modules-grid.donador {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    max-width: 1400px;
+    width: 100%;
+}
+
+/* Grid de módulos - Beneficiario (2 módulos) */
+.modules-grid.beneficiario {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 60px;
+    max-width: 800px;
+    width: 100%;
+    justify-items: center;
+}
+
+/* Tarjetas de módulos */
+.module-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 2px solid #fed7aa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Tarjetas específicas para beneficiario */
+.modules-grid.beneficiario .module-card {
+    width: 100%;
+    max-width: 300px;
+}
+
+.module-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border-color: #fb923c;
+}
+
+.module-card:hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.05), rgba(239, 68, 68, 0.05));
+    pointer-events: none;
+}
+
+/* Contenido del módulo */
+.module-content {
+    padding: 40px 30px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+/* Iconos de módulos */
+.module-icon {
+    margin-bottom: 25px;
+}
+
+.icon-img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    transition: transform 0.3s ease;
+}
+
+.module-card:hover .icon-img {
+    transform: scale(1.1);
+}
+
+/* Títulos de módulos */
+.module-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 12px;
+    transition: color 0.3s ease;
+}
+
+.module-card:hover .module-content h3 {
+    color: #ea580c;
+}
+
+/* Descripción de módulos */
+.module-content p {
+    color: #6b7280;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    transition: color 0.3s ease;
+}
+
+.module-card:hover .module-content p {
+    color: #374151;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    /* Admin y Donador - 4 módulos pasan a 2x2 */
+    .modules-grid.admin,
+    .modules-grid.donador {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+        max-width: 800px;
+    }
+    
+    /* Beneficiario - 2 módulos se mantienen igual */
+    .modules-grid.beneficiario {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 50px;
+        max-width: 700px;
+    }
+    
+    .welcome-title h1 {
+        font-size: 2.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-section.admin,
+    .hero-section.beneficiario,
+    .hero-section.donador {
+        padding: 15px;
+        min-height: 100vh;
+    }
+    
+    .welcome-title {
+        margin-bottom: 40px;
+    }
+    
+    .welcome-title h1 {
+        font-size: 2.2rem;
+    }
+    
+    /* Todos los módulos en columna única */
+    .modules-grid.admin,
+    .modules-grid.beneficiario,
+    .modules-grid.donador {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        max-width: 400px;
+    }
+    
+    .module-content {
+        padding: 30px 25px;
+    }
+    
+    .icon-img {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .logout-container {
+        top: 15px;
+        right: 15px;
+    }
+    
+    .logout-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-title h1 {
+        font-size: 1.8rem;
+    }
+    
+    .modules-grid.admin,
+    .modules-grid.beneficiario,
+    .modules-grid.donador {
+        max-width: 300px;
+    }
+    
+    .module-content {
+        padding: 25px 20px;
+    }
+    
+    .module-content h3 {
+        font-size: 1.3rem;
+    }
+    
+    .icon-img {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+/* Animaciones adicionales */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.module-card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.module-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.module-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.module-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.module-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+/* Efecto de pulso para el botón de logout */
+.logout-btn:active {
+    transform: translateY(-1px) scale(0.98);
+}

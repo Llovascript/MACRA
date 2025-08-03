@@ -1,0 +1,481 @@
+/* Reset y configuración base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 100%;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    position: absolute;
+    left: 0;
+}
+
+.back-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #333;
+    text-align: center;
+    width: 100%;
+    margin: 20px 0 40px 0;
+}
+
+/* Contenedor de tabla */
+.table-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+/* Tabla */
+.solicitudes-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+}
+
+/* Header de la tabla */
+.solicitudes-table thead {
+    background-color: #000000;
+}
+
+.solicitudes-table thead th {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 16px;
+    padding: 16px 20px;
+    text-align: left;
+    border: none;
+}
+
+.solicitudes-table thead th:last-child {
+    text-align: center;
+}
+
+/* Cuerpo de la tabla */
+.solicitudes-table tbody tr {
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.2s ease;
+}
+
+.solicitudes-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.solicitudes-table tbody td {
+    padding: 16px 20px;
+    font-size: 15px;
+    color: #333;
+    border: none;
+}
+
+.solicitudes-table tbody td:last-child {
+    text-align: center;
+}
+
+/* Botones de acción */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.accept-btn {
+    color: #28a745;
+}
+
+.accept-btn:hover {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.reject-btn {
+    color: #dc3545;
+}
+
+.reject-btn:hover {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Estados de filas vacías */
+.solicitudes-table tbody tr td:empty {
+    height: 60px;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .title {
+        font-size: 24px;
+        margin-left: 40px;
+        text-align: left;
+    }
+
+    .header {
+        margin-bottom: 30px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .solicitudes-table {
+        min-width: 600px;
+    }
+
+    .solicitudes-table thead th,
+    .solicitudes-table tbody td {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+
+    .action-buttons {
+        gap: 6px;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+
+    .title {
+        font-size: 22px;
+    }
+
+    .solicitudes-table thead th,
+    .solicitudes-table tbody td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .action-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 13px;
+    }
+}
+
+/* Estados adicionales */
+.solicitudes-table tbody tr.pending {
+    background-color: #eeeeed;
+}
+
+.solicitudes-table tbody tr.approved {
+    background-color: #d4edda;
+}
+
+.solicitudes-table tbody tr.rejected {
+    background-color: #f8d7da;
+}
+
+/* Focus visible para accesibilidad */
+.back-btn:focus-visible,
+.action-btn:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Animaciones suaves */
+.back-btn,
+.action-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading state */
+.table-container.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+    color: #dee2e6;
+}
+
+/* Modales */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+}
+
+.notification-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.modal-header {
+    padding: 20px 24px 0;
+    border-bottom: none;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px 24px;
+}
+
+.modal-body p {
+    margin: 0;
+    font-size: 16px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.notification-icon {
+    margin-bottom: 16px;
+}
+
+.notification-icon i {
+    font-size: 48px;
+}
+
+.modal-footer {
+    padding: 0 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.notification-content .modal-footer {
+    justify-content: center;
+}
+
+/* Botones del modal */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 100px;
+}
+
+.btn-cancel {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-cancel:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.btn-confirm {
+    color: #ffffff;
+}
+
+.btn-confirm.accept {
+    background-color: #28a745;
+}
+
+.btn-confirm.accept:hover {
+    background-color: #218838;
+}
+
+.btn-confirm.reject {
+    background-color: #dc3545;
+}
+
+.btn-confirm.reject:hover {
+    background-color: #c82333;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+/* Estados de fila después del procesamiento */
+.status-text {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.solicitudes-table tbody tr.approved .status-text {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.solicitudes-table tbody tr.rejected .status-text {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive para modales */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    
+    .modal-header h3 {
+        font-size: 18px;
+    }
+    
+    .modal-body p {
+        font-size: 15px;
+    }
+    
+    .btn {
+        min-width: 80px;
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .modal-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .notification-content .modal-footer {
+        flex-direction: row;
+    }
+    
+    .notification-content .btn {
+        width: auto;
+        min-width: 120px;
+    }
+}

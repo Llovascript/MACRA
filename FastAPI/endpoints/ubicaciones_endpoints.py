@@ -12,7 +12,7 @@ router = APIRouter(tags=["ubicaciones"])
 def create_estado(
     estado: EstadoCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     db_estado = Estado(**estado.dict())
     db.add(db_estado)
@@ -35,7 +35,7 @@ def get_estados(
 def create_municipio(
     municipio: MunicipioCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     estado = db.query(Estado).filter(Estado.id == municipio.estado_id).first()
     if not estado:

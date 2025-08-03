@@ -12,8 +12,12 @@ router = APIRouter(prefix="/donaciones", tags=["donaciones"])
 def create_donacion(
     donacion: DonacionCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador", "donante"]))
+    current_user: Usuario = Depends(require_role(["admin", "donante"]))
 ):
+    
+    if current_user.rol.nombre == "donante" and donacion.usuario_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para crear donaciones para otros usuarios.")
+    
     usuario = db.query(Usuario).filter(
         Usuario.id == donacion.usuario_id,
         Usuario.del_flag == False
@@ -47,9 +51,19 @@ def get_donaciones(
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     return db.query(Donacion).filter(Donacion.del_flag == False).offset(skip).limit(limit).all()
+
+@router.get("/me", response_model=List[DonacionResponse])
+def get_my_donations(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["donante"])) # Solo donantes ven sus propias donaciones es el nuevo endpoin de la nueva tabla
+):
+    return db.query(Donacion).filter(
+        Donacion.usuario_id == current_user.id,
+        Donacion.del_flag == False
+    ).all()
 
 @router.get("/{donacion_id}", response_model=DonacionResponse)
 def get_donacion(
@@ -65,23 +79,22 @@ def get_donacion(
     if not donacion:
         raise HTTPException(status_code=404, detail="Donación no encontrada")
     
-    db_user = db.query(Usuario).filter(Usuario.id == current_user.id).first()
-    user_role = db.query(Rol).filter(Rol.id == db_user.rol_id).first()
-    
-    if user_role.nombre not in ["admin", "moderador"] and current_user.id != donacion.usuario_id:
+    if current_user.rol.nombre == "admin":
+        return donacion
+    elif current_user.rol.nombre == "donante" and current_user.id == donacion.usuario_id:
+        return donacion
+    else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para ver esta donación"
         )
-    
-    return donacion
 
 @router.put("/{donacion_id}", response_model=DonacionResponse)
 def update_donacion(
     donacion_id: int, 
     donacion_update: DonacionUpdate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+    current_user: Usuario = Depends(require_role(["admin"]))
 ):
     donacion = db.query(Donacion).filter(
         Donacion.id == donacion_id,
@@ -102,3 +115,28 @@ def update_donacion(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error actualizando donación")
+    
+@router.put("/{donacion_id}/aprobar", response_model=DonacionResponse)
+def approve_donacion(
+    donacion_id: int,
+    aprobacion: bool,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["admin"]))
+):
+    donacion = db.query(Donacion).filter(
+        Donacion.id == donacion_id,
+        Donacion.del_flag == False
+    ).first()
+    
+    if not donacion:
+        raise HTTPException(status_code=404, detail="Donación no encontrada")
+    
+    donacion.aprobacion = aprobacion
+    try:
+        db.commit()
+        db.refresh(donacion)
+        return donacion
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Error actualizando aprobación de donación")
+
