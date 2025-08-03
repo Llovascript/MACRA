@@ -26,6 +26,7 @@ interface Donante {
   aM: string
   correo: string
   telefono: string
+  rfc?: string
   paginaWeb?: string
   estatus_id: number
   rol_id: number
@@ -51,6 +52,7 @@ export default function DonantesScreen() {
     aM: "",
     correo: "",
     telefono: "",
+    rfc: "",
     paginaWeb: "",
     contraseña: "",
     estatus_id: 1,
@@ -96,18 +98,6 @@ export default function DonantesScreen() {
         const donantesData = allUsers.filter((user: Donante) => user.rol_id === 2 && !user.del_flag)
         setDonantes(donantesData)
       }
-
-      // Cargar estatuses
-      // const estatusResponse = await fetch(generateFastApiUrl("/estatus/"), {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      // })
-
-      // if (estatusResponse.ok) {
-      //   const estatusData = await estatusResponse.json()
-      //   setEstatuses(estatusData)
-      // }
     } catch (error) {
       console.error("Error loading data:", error)
       Alert.alert("Error", "Error al cargar los datos")
@@ -130,6 +120,7 @@ export default function DonantesScreen() {
       aM: "",
       correo: "",
       telefono: "",
+      rfc: "",
       paginaWeb: "",
       contraseña: "",
       estatus_id: 1,
@@ -145,6 +136,7 @@ export default function DonantesScreen() {
       aM: donante.aM,
       correo: donante.correo,
       telefono: donante.telefono,
+      rfc: donante.rfc || "",
       paginaWeb: donante.paginaWeb || "",
       contraseña: "",
       estatus_id: donante.estatus_id,
@@ -160,8 +152,15 @@ export default function DonantesScreen() {
         return
       }
 
-      if (!formData.nombre || !formData.aP || !formData.aM || !formData.correo || !formData.telefono) {
+      if (!formData.nombre || !formData.aP || !formData.aM || !formData.correo || !formData.telefono || !formData.rfc) {
         Alert.alert("Error", "Por favor completa todos los campos obligatorios")
+        return
+      }
+
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.correo)) {
+        Alert.alert("Error", "Por favor ingresa un correo electrónico válido")
         return
       }
 
@@ -171,8 +170,6 @@ export default function DonantesScreen() {
 
       const method = editingDonante ? "PUT" : "POST"
 
-      // Para crear: no incluir estatus_id (siempre será 1 - Activo)
-      // Para editar: incluir estatus_id
       const requestData = editingDonante
         ? {
             nombre: formData.nombre,
@@ -180,16 +177,19 @@ export default function DonantesScreen() {
             aM: formData.aM,
             correo: formData.correo,
             telefono: formData.telefono,
+            rfc: formData.rfc,
             paginaWeb: formData.paginaWeb,
             estatus_id: formData.estatus_id,
             ...(formData.contraseña && { contraseña: formData.contraseña }),
           }
         : {
+            tipo: "persona",
             nombre: formData.nombre,
             aP: formData.aP,
             aM: formData.aM,
             correo: formData.correo,
             telefono: formData.telefono,
+            rfc: formData.rfc,
             paginaWeb: formData.paginaWeb,
             contraseña: formData.contraseña,
             rol_id: 2, // Donante
@@ -265,6 +265,7 @@ export default function DonantesScreen() {
         </Text>
         <Text style={styles.donanteEmail}>{item.correo}</Text>
         <Text style={styles.donantePhone}>{item.telefono}</Text>
+        {item.rfc && <Text style={styles.donanteRfc}>RFC: {item.rfc}</Text>}
         {item.paginaWeb && <Text style={styles.donanteWebsite}>{item.paginaWeb}</Text>}
         <View style={styles.statusContainer}>
           <View style={[styles.statusBadge, { backgroundColor: item.estatus_id === 1 ? "#4CAF50" : "#F44336" }]}>
@@ -368,6 +369,7 @@ export default function DonantesScreen() {
                   placeholder="correo@ejemplo.com"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
                 />
               </View>
 
@@ -383,6 +385,18 @@ export default function DonantesScreen() {
               </View>
 
               <View style={styles.formGroup}>
+                <Text style={styles.label}>RFC *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.rfc}
+                  onChangeText={(text) => setFormData({ ...formData, rfc: text.toUpperCase() })}
+                  placeholder="RFC"
+                  autoCapitalize="characters"
+                  maxLength={13}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
                 <Text style={styles.label}>Página Web</Text>
                 <TextInput
                   style={styles.input}
@@ -390,6 +404,7 @@ export default function DonantesScreen() {
                   onChangeText={(text) => setFormData({ ...formData, paginaWeb: text })}
                   placeholder="https://ejemplo.com"
                   autoCapitalize="none"
+                  autoCorrect={false}
                 />
               </View>
 
@@ -517,6 +532,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   donantePhone: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  donanteRfc: {
     fontSize: 14,
     color: "#666",
     marginBottom: 2,

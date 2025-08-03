@@ -26,6 +26,7 @@ interface Beneficiario {
   aM: string
   correo: string
   telefono: string
+  rfc?: string
   paginaWeb?: string
   estatus_id: number
   rol_id: number
@@ -51,6 +52,7 @@ export default function BeneficiariosScreen() {
     aM: "",
     correo: "",
     telefono: "",
+    rfc: "",
     paginaWeb: "",
     contraseña: "",
     estatus_id: 1,
@@ -96,18 +98,6 @@ export default function BeneficiariosScreen() {
         const beneficiariosData = allUsers.filter((user: Beneficiario) => user.rol_id === 3 && !user.del_flag)
         setBeneficiarios(beneficiariosData)
       }
-
-      // Cargar estatuses
-      // const estatusResponse = await fetch(generateFastApiUrl("/estatus/"), {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      // })
-
-      // if (estatusResponse.ok) {
-      //   const estatusData = await estatusResponse.json()
-      //   setEstatuses(estatusData)
-      // }
     } catch (error) {
       console.error("Error loading data:", error)
       Alert.alert("Error", "Error al cargar los datos")
@@ -130,6 +120,7 @@ export default function BeneficiariosScreen() {
       aM: "",
       correo: "",
       telefono: "",
+      rfc: "",
       paginaWeb: "",
       contraseña: "",
       estatus_id: 1,
@@ -145,6 +136,7 @@ export default function BeneficiariosScreen() {
       aM: beneficiario.aM,
       correo: beneficiario.correo,
       telefono: beneficiario.telefono,
+      rfc: beneficiario.rfc || "",
       paginaWeb: beneficiario.paginaWeb || "",
       contraseña: "",
       estatus_id: beneficiario.estatus_id,
@@ -160,8 +152,15 @@ export default function BeneficiariosScreen() {
         return
       }
 
-      if (!formData.nombre || !formData.aP || !formData.aM || !formData.correo || !formData.telefono) {
+      if (!formData.nombre || !formData.aP || !formData.aM || !formData.correo || !formData.telefono || !formData.rfc) {
         Alert.alert("Error", "Por favor completa todos los campos obligatorios")
+        return
+      }
+
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.correo)) {
+        Alert.alert("Error", "Por favor ingresa un correo electrónico válido")
         return
       }
 
@@ -171,8 +170,6 @@ export default function BeneficiariosScreen() {
 
       const method = editingBeneficiario ? "PUT" : "POST"
 
-      // Para crear: no incluir estatus_id (siempre será 1 - Activo)
-      // Para editar: incluir estatus_id
       const requestData = editingBeneficiario
         ? {
             nombre: formData.nombre,
@@ -180,16 +177,19 @@ export default function BeneficiariosScreen() {
             aM: formData.aM,
             correo: formData.correo,
             telefono: formData.telefono,
+            rfc: formData.rfc,
             paginaWeb: formData.paginaWeb,
             estatus_id: formData.estatus_id,
             ...(formData.contraseña && { contraseña: formData.contraseña }),
           }
         : {
+            tipo: "persona",
             nombre: formData.nombre,
             aP: formData.aP,
             aM: formData.aM,
             correo: formData.correo,
             telefono: formData.telefono,
+            rfc: formData.rfc,
             paginaWeb: formData.paginaWeb,
             contraseña: formData.contraseña,
             rol_id: 3, // Beneficiario
@@ -265,6 +265,7 @@ export default function BeneficiariosScreen() {
         </Text>
         <Text style={styles.beneficiarioEmail}>{item.correo}</Text>
         <Text style={styles.beneficiarioPhone}>{item.telefono}</Text>
+        {item.rfc && <Text style={styles.beneficiarioRfc}>RFC: {item.rfc}</Text>}
         {item.paginaWeb && <Text style={styles.beneficiarioWebsite}>{item.paginaWeb}</Text>}
         <View style={styles.statusContainer}>
           <View style={[styles.statusBadge, { backgroundColor: item.estatus_id === 1 ? "#4CAF50" : "#F44336" }]}>
@@ -370,6 +371,7 @@ export default function BeneficiariosScreen() {
                   placeholder="correo@ejemplo.com"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
                 />
               </View>
 
@@ -385,6 +387,18 @@ export default function BeneficiariosScreen() {
               </View>
 
               <View style={styles.formGroup}>
+                <Text style={styles.label}>RFC *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.rfc}
+                  onChangeText={(text) => setFormData({ ...formData, rfc: text.toUpperCase() })}
+                  placeholder="RFC"
+                  autoCapitalize="characters"
+                  maxLength={13}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
                 <Text style={styles.label}>Página Web</Text>
                 <TextInput
                   style={styles.input}
@@ -392,6 +406,7 @@ export default function BeneficiariosScreen() {
                   onChangeText={(text) => setFormData({ ...formData, paginaWeb: text })}
                   placeholder="https://ejemplo.com"
                   autoCapitalize="none"
+                  autoCorrect={false}
                 />
               </View>
 
@@ -519,6 +534,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   beneficiarioPhone: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  beneficiarioRfc: {
     fontSize: 14,
     color: "#666",
     marginBottom: 2,
