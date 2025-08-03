@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agregar Beneficiario</title>
-    <link rel="stylesheet" href="css/adminBeneficiarios.css">
+    <link rel="stylesheet" href="{{ asset('css/adminBeneficiarios.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 
@@ -21,7 +21,7 @@
 
         <!-- Formulario -->
         <div class="form-section">
-            <form class="donante-form" action="#" method="POST">
+            <form class="donante-form" action="{{ route('agregar.beneficiario') }}" method="POST">
                 @csrf
 
                 <!-- Nombre y Sitio web -->
@@ -32,10 +32,10 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
-                            <input type="text" name="nombre" placeholder="Nombre" class="form-input" required>
+                            <input type="text" name="nombre" placeholder="Nombre" class="form-input"
+                                value="{{ old('nombre') }}" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="input-wrapper">
                             <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +43,7 @@
                                     d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
                             </svg>
                             <input type="url" name="sitio_web" placeholder="Sitio web opcional (https://...)"
-                                class="form-input">
+                                class="form-input" value="{{ old('sitio_web') }}">
                         </div>
                     </div>
                 </div>
@@ -57,10 +57,9 @@
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             <input type="text" name="apellido_paterno" placeholder="Apellido Paterno"
-                                class="form-input" required>
+                                class="form-input" value="{{ old('apellido_paterno') }}" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="input-wrapper">
                             <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +68,7 @@
                                 </path>
                             </svg>
                             <input type="email" name="email" placeholder="Correo electrónico" class="form-input"
-                                required>
+                                value="{{ old('email') }}" required>
                         </div>
                     </div>
                 </div>
@@ -83,10 +82,9 @@
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             <input type="text" name="apellido_materno" placeholder="Apellido Materno"
-                                class="form-input" required>
+                                class="form-input" value="{{ old('apellido_materno') }}" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="input-wrapper">
                             <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +92,8 @@
                                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
                                 </path>
                             </svg>
-                            <input type="password" name="password" placeholder="Contraseña" class="form-input" required>
+                            <input type="password" name="password" placeholder="Contraseña" class="form-input"
+                                required>
                         </div>
                     </div>
                 </div>
@@ -109,10 +108,9 @@
                                 </path>
                             </svg>
                             <input type="number" name="edad" placeholder="Edad" class="form-input"
-                                min="18" max="100" required>
+                                min="18" max="100" value="{{ old('edad') }}" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="input-wrapper">
                             <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,15 +134,15 @@
                                 </path>
                             </svg>
                             <input type="tel" name="telefono" placeholder="Teléfono" class="form-input"
-                                required>
+                                value="{{ old('telefono') }}" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="select-wrapper">
                             <select name="tipo_entidad" class="form-select" required>
                                 <option value="">Selecciona tipo de entidad</option>
-                                <option value="individual">Persona</option>
+                                <option value="individual"
+                                    {{ old('tipo_entidad') == 'individual' ? 'selected' : '' }}>Persona</option>
                             </select>
                             <svg class="select-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -164,16 +162,16 @@
                                 </path>
                             </svg>
                             <input type="text" name="rfc" placeholder="RFC" class="form-input"
-                                maxlength="13">
+                                maxlength="13" value="{{ old('rfc') }}">
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="select-wrapper">
                             <select name="tipo_perfil" class="form-select" required>
                                 <option value="">Selecciona tipo de perfil</option>
-                                <option value="donante_monetario">Donante</option>
-                                <option value="donante_especie">Beneficiario</option>
+                                <option value="donante_especie"
+                                    {{ old('tipo_perfil') == 'donante_especie' ? 'selected' : '' }}>Beneficiario
+                                </option>
                             </select>
                             <svg class="select-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -190,6 +188,218 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal de notificación -->
+    <div id="notificationModal" class="modal notification-modal">
+        <div class="modal-content notification-content">
+            <div class="modal-body">
+                <div class="notification-icon">
+                    <i id="notificationIcon" class="fas fa-check-circle"></i>
+                </div>
+                <h4 id="notificationTitle">Proceso Completado</h4>
+                <p id="notificationMessage">Proceso realizado exitosamente</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="cerrarNotificacion()">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Estilos para el modal de notificaciones */
+        .notification-modal {
+            display: none;
+            position: fixed;
+            z-index: 1500;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-content {
+            background-color: #ffffff;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+            text-align: center;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .notification-modal .modal-body {
+            padding: 30px 20px 20px;
+        }
+
+        .notification-icon {
+            margin-bottom: 20px;
+        }
+
+        .notification-icon i {
+            font-size: 4rem;
+        }
+
+        .notification-icon i.fa-check-circle {
+            color: #28a745;
+        }
+
+        .notification-icon i.fa-exclamation-circle {
+            color: #dc3545;
+        }
+
+        .notification-icon i.fa-exclamation-triangle {
+            color: #ffc107;
+        }
+
+        .notification-icon i.fa-info-circle {
+            color: #17a2b8;
+        }
+
+        #notificationTitle {
+            margin: 0 0 15px 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        #notificationMessage {
+            margin: 0;
+            font-size: 1rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .notification-modal .modal-footer {
+            padding: 15px 20px 25px;
+            border-top: none;
+            display: flex;
+            justify-content: center;
+        }
+
+        .notification-modal .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .notification-modal .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .notification-modal .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .notification-content {
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+
+            .notification-icon i {
+                font-size: 3rem;
+            }
+
+            #notificationTitle {
+                font-size: 1.2rem;
+            }
+
+            #notificationMessage {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+
+    <script>
+        // Funciones de notificación
+        function mostrarNotificacion(tipo, titulo, mensaje, redirect = null) {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('notificationIcon');
+            const title = document.getElementById('notificationTitle');
+            const message = document.getElementById('notificationMessage');
+
+            const iconClasses = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
+            icon.className = `fas ${iconClasses[tipo] || iconClasses.success}`;
+            title.textContent = titulo;
+            message.textContent = mensaje;
+
+            if (redirect) {
+                modal.setAttribute('data-redirect', redirect);
+            } else {
+                modal.removeAttribute('data-redirect');
+            }
+
+            modal.style.display = 'flex';
+            setTimeout(() => modal.querySelector('.btn-primary')?.focus(), 100);
+        }
+
+        function cerrarNotificacion() {
+            const modal = document.getElementById('notificationModal');
+            const redirect = modal.getAttribute('data-redirect');
+
+            modal.style.display = 'none';
+
+            if (redirect) {
+                setTimeout(() => window.location.href = redirect, 300);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Notificaciones del servidor
+            @if (session('notification'))
+                const notification = @json(session('notification'));
+                mostrarNotificacion(notification.type, notification.title, notification.message, notification
+                    .redirect || null);
+            @endif
+
+            // Cerrar modal con Escape o click fuera
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    const modal = document.getElementById('notificationModal');
+                    if (modal && modal.style.display === 'flex') {
+                        cerrarNotificacion();
+                    }
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                const modal = document.getElementById('notificationModal');
+                if (event.target === modal) {
+                    cerrarNotificacion();
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

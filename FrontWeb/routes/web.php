@@ -9,6 +9,8 @@ use App\Http\Controllers\UserDatabaseController;
 use App\Http\Controllers\SolicitudesPerfilesController;
 use App\Http\Controllers\SolicitudesDonacionesController;
 use App\Http\Controllers\DonacionesDatabaseController;
+use App\Http\Controllers\AdminDonantesController;
+use App\Http\Controllers\AdminBeneficiariosController; // NUEVO
 
 // Rutas principales
 Route::get('/index', [UserController::class, 'showIndex'])->name('index');
@@ -35,39 +37,39 @@ Route::middleware(['auth.check:admin'])->group(function () {
         return view('adminSolicitudes');
     })->name('adminSolicitudes');
     
-    // Rutas de admin donantes
-    Route::get('/adminDonantes', function () {
-        return view('adminDonantes');
-    })->name('adminDonantes');
+    // Rutas de admin donantes - USANDO AdminDonantesController
+    Route::get('/adminDonantes', [AdminDonantesController::class, 'showAdminDonantes'])->name('adminDonantes');
     
-    Route::get('/agregarDonante', function () {
-        return view('agregarDonante');
-    })->name('agregarDonante');
+    // Agregar donante
+    Route::get('/agregarDonante', [AdminDonantesController::class, 'showAgregarDonante'])->name('agregarDonante');
+    Route::post('/agregarDonante', [AdminDonantesController::class, 'agregarDonante'])->name('agregar.donante');
     
-    Route::get('/actualizarDonante', function () {
-        return view('actualizarDonante');
-    })->name('actualizarDonante');
+    // Actualizar donante
+    Route::get('/actualizarDonante', [AdminDonantesController::class, 'showActualizarDonante'])->name('actualizarDonante');
+    Route::post('/buscarDonanteActualizar', [AdminDonantesController::class, 'buscarDonanteParaActualizar'])->name('buscar.donante.actualizar');
+    Route::put('/actualizarDonante', [AdminDonantesController::class, 'actualizarDonante'])->name('actualizar.donante');
     
-    Route::get('/eliminarDonante', function () {
-        return view('eliminarDonante');
-    })->name('eliminarDonante');
+    // Eliminar donante
+    Route::get('/eliminarDonante', [AdminDonantesController::class, 'showEliminarDonante'])->name('eliminarDonante');
+    Route::post('/buscarDonanteEliminar', [AdminDonantesController::class, 'buscarDonanteParaEliminar'])->name('buscar.donante.eliminar');
+    Route::delete('/eliminarDonante', [AdminDonantesController::class, 'eliminarDonante'])->name('eliminar.donante');
     
-    // Rutas de admin beneficiarios
-    Route::get('/adminBeneficiarios', function () {
-        return view('adminBeneficiarios');
-    })->name('adminBeneficiarios');
+    // Rutas de admin beneficiarios - USANDO AdminBeneficiariosController
+    Route::get('/adminBeneficiarios', [AdminBeneficiariosController::class, 'showAdminBeneficiarios'])->name('adminBeneficiarios');
     
-    Route::get('/agregarBeneficiario', function () {
-        return view('agregarBeneficiario');
-    })->name('agregarBeneficiario');
+    // Agregar beneficiario
+    Route::get('/agregarBeneficiario', [AdminBeneficiariosController::class, 'showAgregarBeneficiario'])->name('agregarBeneficiario');
+    Route::post('/agregarBeneficiario', [AdminBeneficiariosController::class, 'agregarBeneficiario'])->name('agregar.beneficiario');
     
-    Route::get('/actualizarBeneficiario', function () {
-        return view('actualizarBeneficiario');
-    })->name('actualizarBeneficiario');
+    // Actualizar beneficiario
+    Route::get('/actualizarBeneficiario', [AdminBeneficiariosController::class, 'showActualizarBeneficiario'])->name('actualizarBeneficiario');
+    Route::post('/buscarBeneficiarioActualizar', [AdminBeneficiariosController::class, 'buscarBeneficiarioParaActualizar'])->name('buscar.beneficiario.actualizar');
+    Route::put('/actualizarBeneficiario', [AdminBeneficiariosController::class, 'actualizarBeneficiario'])->name('actualizar.beneficiario');
     
-    Route::get('/eliminarBeneficiario', function () {
-        return view('eliminarBeneficiario');
-    })->name('eliminarBeneficiario');
+    // Eliminar beneficiario
+    Route::get('/eliminarBeneficiario', [AdminBeneficiariosController::class, 'showEliminarBeneficiario'])->name('eliminarBeneficiario');
+    Route::post('/buscarBeneficiarioEliminar', [AdminBeneficiariosController::class, 'buscarBeneficiarioParaEliminar'])->name('buscar.beneficiario.eliminar');
+    Route::delete('/eliminarBeneficiario', [AdminBeneficiariosController::class, 'eliminarBeneficiario'])->name('eliminar.beneficiario');
     
     Route::get('/solicitudesPerfiles', [SolicitudesPerfilesController::class, 'index'])
         ->name('solicitudesPerfiles');

@@ -5,8 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Actualizar Beneficiario</title>
-    <link rel="stylesheet" href="css/adminBeneficiarios.css">
+    <link rel="stylesheet" href="{{ asset('css/adminBeneficiarios.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
 <body>
@@ -34,8 +35,10 @@
 
         <!-- Formulario -->
         <div class="form-section">
-            <form class="donante-form" action="#" method="POST">
+            <form class="donante-form" action="{{ route('actualizar.beneficiario') }}" method="POST" id="updateForm">
                 @csrf
+                @method('PUT')
+                <input type="hidden" name="usuario_id" id="usuario_id">
 
                 <!-- Nombre y Sitio web -->
                 <div class="form-row">
@@ -48,7 +51,6 @@
                             <input type="text" name="nombre" placeholder="Nombre" class="form-input" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="input-wrapper">
                             <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +75,6 @@
                                 class="form-input" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="input-wrapper">
                             <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +100,6 @@
                                 class="form-input" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="input-wrapper">
                             <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +107,8 @@
                                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
                                 </path>
                             </svg>
-                            <input type="password" name="password" placeholder="Contraseña" class="form-input">
+                            <input type="password" name="password" placeholder="Nueva contraseña (opcional)"
+                                class="form-input">
                         </div>
                     </div>
                 </div>
@@ -125,7 +126,6 @@
                                 min="18" max="100" required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="input-wrapper">
                             <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,8 +133,8 @@
                                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
                                 </path>
                             </svg>
-                            <input type="password" name="password_confirmation" placeholder="Confirmar contraseña"
-                                class="form-input">
+                            <input type="password" name="password_confirmation"
+                                placeholder="Confirmar nueva contraseña" class="form-input">
                         </div>
                     </div>
                 </div>
@@ -152,7 +152,6 @@
                                 required>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="select-wrapper">
                             <select name="tipo_entidad" class="form-select" required>
@@ -180,12 +179,10 @@
                                 maxlength="13">
                         </div>
                     </div>
-
                     <div class="input-group">
                         <div class="select-wrapper">
                             <select name="tipo_perfil" class="form-select" required>
                                 <option value="">Selecciona tipo de perfil</option>
-                                <option value="donante_monetario">Donante</option>
                                 <option value="donante_especie">Beneficiario</option>
                             </select>
                             <svg class="select-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,65 +194,356 @@
                 </div>
 
                 <!-- Botón de actualizar -->
-                <div class="form-actions">
-                    <button type="submit" class="submit-btn update-btn">Actualizar</button>
+                <div class="form-actions" id="updateButtonContainer" style="display: none;">
+                    <button type="submit" class="submit-btn">Actualizar</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Modal de notificación -->
+    <div id="notificationModal" class="modal notification-modal">
+        <div class="modal-content notification-content">
+            <div class="modal-body">
+                <div class="notification-icon">
+                    <i id="notificationIcon" class="fas fa-check-circle"></i>
+                </div>
+                <h4 id="notificationTitle">Proceso Completado</h4>
+                <p id="notificationMessage">Proceso realizado exitosamente</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="cerrarNotificacion()">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Estilos para el modal de notificaciones */
+        .notification-modal {
+            display: none;
+            position: fixed;
+            z-index: 1500;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-content {
+            background-color: #ffffff;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+            text-align: center;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .notification-modal .modal-body {
+            padding: 30px 20px 20px;
+        }
+
+        .notification-icon {
+            margin-bottom: 20px;
+        }
+
+        .notification-icon i {
+            font-size: 4rem;
+        }
+
+        .notification-icon i.fa-check-circle {
+            color: #28a745;
+        }
+
+        .notification-icon i.fa-exclamation-circle {
+            color: #dc3545;
+        }
+
+        .notification-icon i.fa-exclamation-triangle {
+            color: #ffc107;
+        }
+
+        .notification-icon i.fa-info-circle {
+            color: #17a2b8;
+        }
+
+        #notificationTitle {
+            margin: 0 0 15px 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        #notificationMessage {
+            margin: 0;
+            font-size: 1rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .notification-modal .modal-footer {
+            padding: 15px 20px 25px;
+            border-top: none;
+            display: flex;
+            justify-content: center;
+        }
+
+        .notification-modal .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .notification-modal .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .notification-modal .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .notification-content {
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+
+            .notification-icon i {
+                font-size: 3rem;
+            }
+
+            #notificationTitle {
+                font-size: 1.2rem;
+            }
+
+            #notificationMessage {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+
     <script>
+        // Configuración
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const buscarUrl = "{{ route('buscar.beneficiario.actualizar') }}";
+
+        // Funciones de notificación
+        function mostrarNotificacion(tipo, titulo, mensaje, redirect = null) {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('notificationIcon');
+            const title = document.getElementById('notificationTitle');
+            const message = document.getElementById('notificationMessage');
+
+            const iconClasses = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
+            icon.className = `fas ${iconClasses[tipo] || iconClasses.success}`;
+            title.textContent = titulo;
+            message.textContent = mensaje;
+
+            if (redirect) {
+                modal.setAttribute('data-redirect', redirect);
+            } else {
+                modal.removeAttribute('data-redirect');
+            }
+
+            modal.style.display = 'flex';
+            setTimeout(() => modal.querySelector('.btn-primary')?.focus(), 100);
+        }
+
+        function cerrarNotificacion() {
+            const modal = document.getElementById('notificationModal');
+            const redirect = modal.getAttribute('data-redirect');
+
+            modal.style.display = 'none';
+
+            if (redirect) {
+                setTimeout(() => window.location.href = redirect, 300);
+            }
+        }
+
+        // Búsqueda de usuario
         function buscarUsuario() {
             const searchInput = document.getElementById('searchInput');
             const searchTerm = searchInput.value.trim();
 
-            if (searchTerm === '') {
-                alert('Por favor ingresa un término de búsqueda');
+            if (!searchTerm) {
+                mostrarNotificacion('warning', 'Campo Requerido', 'Por favor ingresa un término de búsqueda');
                 return;
             }
 
-            // Aquí agregarías la lógica para buscar el usuario
-            console.log('Buscando usuario:', searchTerm);
+            const searchBtn = document.querySelector('.search-btn');
+            const originalContent = searchBtn.innerHTML;
+            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            searchBtn.disabled = true;
 
-            // Simulación de cargar datos del usuario
-            // En una implementación real, harías una petición AJAX
-            setTimeout(() => {
-                cargarDatosUsuario();
-            }, 500);
+            fetch(buscarUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        buscar_usuario: searchTerm
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        mostrarNotificacion(data.type, data.title, data.message);
+                    } else if (data.beneficiario) {
+                        cargarDatosUsuario(data.beneficiario);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarNotificacion('error', 'Error de Conexión', 'No se pudo conectar con el servidor');
+                })
+                .finally(() => {
+                    searchBtn.innerHTML = originalContent;
+                    searchBtn.disabled = false;
+                });
         }
 
-        function cargarDatosUsuario() {
-            // Simulación de datos del usuario encontrado
-            const userData = {
-                nombre: 'Juan Carlos',
-                apellido_paterno: 'García',
-                apellido_materno: 'López',
-                email: 'juan.garcia@email.com',
-                edad: '35',
-                telefono: '+52 442 123 4567',
-                rfc: 'GALJ850315ABC',
-                sitio_web: 'https://juangarcia.com',
-                tipo_entidad: 'individual',
-                tipo_perfil: 'donante_monetario',
-                password: 'MiContraseña123',
-                password_confirmation: 'MiContraseña123'
+        // Cargar datos del usuario en el formulario
+        function cargarDatosUsuario(beneficiario) {
+            const fields = {
+                'usuario_id': beneficiario.id,
+                'nombre': beneficiario.nombre,
+                'apellido_paterno': beneficiario.aP,
+                'apellido_materno': beneficiario.aM,
+                'email': beneficiario.correo,
+                'edad': beneficiario.edad,
+                'telefono': beneficiario.telefono,
+                'rfc': beneficiario.rfc,
+                'sitio_web': beneficiario.paginaWeb
             };
 
-            // Llenar los campos del formulario
-            Object.keys(userData).forEach(key => {
-                const field = document.querySelector(`[name="${key}"]`);
-                if (field) {
-                    field.value = userData[key];
+            // Llenar campos
+            Object.entries(fields).forEach(([name, value]) => {
+                const element = document.getElementById(name) || document.querySelector(`[name="${name}"]`);
+                if (element) element.value = value || '';
+            });
+
+            // Selects
+            document.querySelector('[name="tipo_entidad"]').value = 'individual';
+            document.querySelector('[name="tipo_perfil"]').value = 'donante_especie';
+
+            // Limpiar contraseñas
+            document.querySelector('[name="password"]').value = '';
+            document.querySelector('[name="password_confirmation"]').value = '';
+
+            // Mostrar botón actualizar
+            document.getElementById('updateButtonContainer').style.display = 'block';
+        }
+
+        // Validación de contraseñas
+        function setupPasswordValidation() {
+            const password = document.querySelector('[name="password"]');
+            const confirmation = document.querySelector('[name="password_confirmation"]');
+
+            confirmation.addEventListener('input', function() {
+                if (password.value && this.value && password.value !== this.value) {
+                    this.setCustomValidity('Las contraseñas no coinciden');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+
+            password.addEventListener('input', function() {
+                if (this.value === '') {
+                    confirmation.removeAttribute('required');
+                } else {
+                    confirmation.setAttribute('required', 'required');
                 }
             });
         }
 
-        // Event listener para buscar con Enter
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Notificaciones del servidor
+            @if (session('notification'))
+                const notification = @json(session('notification'));
+                mostrarNotificacion(notification.type, notification.title, notification.message, notification
+                    .redirect || null);
+            @endif
+
+            // Búsqueda automática desde URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const buscarParam = urlParams.get('buscar');
+            if (buscarParam) {
+                document.getElementById('searchInput').value = buscarParam;
                 buscarUsuario();
             }
+
+            // Configurar validaciones
+            setupPasswordValidation();
+
+            // Búsqueda con Enter
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    buscarUsuario();
+                }
+            });
+
+            // Cerrar modal con Escape o click fuera
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    const modal = document.getElementById('notificationModal');
+                    if (modal && modal.style.display === 'flex') {
+                        cerrarNotificacion();
+                    }
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                const modal = document.getElementById('notificationModal');
+                if (event.target === modal) {
+                    cerrarNotificacion();
+                }
+            });
         });
     </script>
 </body>
