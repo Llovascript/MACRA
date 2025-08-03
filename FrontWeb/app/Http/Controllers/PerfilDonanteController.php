@@ -10,20 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 class PerfilDonanteController extends Controller
 {
-    /**
-     * Muestra el perfil del donante
-     * 
-     * Este controlador maneja múltiples fuentes de datos:
-     * 1. API FastAPI (si hay token de sesión)
-     * 2. Base de datos directa (si hay usuarios donantes creados)
-     * 3. Datos simulados (como fallback)
-     */
     public function index(Request $request)
     {
-        // ============================================
-        // PASO 1: Intentar obtener datos de la API FastAPI
-        // ============================================
-        
         $token = Session::get('access_token');
         
         if ($token) {
@@ -45,8 +33,28 @@ class PerfilDonanteController extends Controller
                         ])->timeout(5)->get($url);
                         
                         if ($response->successful()) {
-                            $userData = $response->json();
+                            $apiData = $response->json();
                             Log::info('Datos del donante obtenidos exitosamente de API: ' . $url);
+                            
+                            // MAPEO CORRECTO PARA DATOS DE API
+                            $userData = [
+                                'id' => $apiData['id'] ?? '',
+                                'nombre' => $apiData['nombre'] ?? '',
+                                'apellido_paterno' => $apiData['aP'] ?? '',      // ✅ Campo correcto de API
+                                'apellido_materno' => $apiData['aM'] ?? '',      // ✅ Campo correcto de API  
+                                'edad' => $apiData['edad'] ?? '',
+                                'telefono' => $apiData['telefono'] ?? '',
+                                'correo' => $apiData['correo'] ?? '',
+                                'rfc' => $apiData['rfc'] ?? '',
+                                'pagina_web' => $apiData['paginaWeb'] ?? '',     // ✅ Campo correcto de API
+                                'tipo_entidad' => $apiData['tipo'] ?? '',        // ✅ Campo correcto de API
+                                'rol' => ['nombre' => ucfirst($apiData['rol']['nombre'] ?? '')],
+                                'aprobacion' => (bool) ($apiData['aprobacion'] ?? false),
+                                'estatus' => ['nombre' => 'Activo'], // Default para API
+                                'created_at' => $apiData['fundacion'] ?? 'No disponible'
+                            ];
+                            
+                            Log::info('Datos mapeados correctamente para la vista: ' . json_encode($userData));
                             return view('perfilDonante', compact('userData'));
                         }
                         
@@ -61,16 +69,12 @@ class PerfilDonanteController extends Controller
             }
         }
         
-        // ============================================
-        // PASO 2: Obtener datos de la base de datos directamente
-        // ============================================
-        
+        // Fallback a base de datos si no hay token o API falla
         try {
             Log::info('Intentando obtener datos del donante desde base de datos...');
             
             $db = DB::connection();
             
-            // Buscar el usuario donante más reciente
             $usuario = $db->table('usuarios')
                 ->leftJoin('roles', 'usuarios.rol_id', '=', 'roles.id')
                 ->leftJoin('estatusG', 'usuarios.estatus_id', '=', 'estatusG.id')
@@ -85,42 +89,33 @@ class PerfilDonanteController extends Controller
                 ->first();
             
             if ($usuario) {
-                // Convertir datos de BD al formato esperado por la vista
+                // MAPEO PARA DATOS DE BASE DE DATOS
                 $userData = [
                     'id' => $usuario->id,
-                    'tipo' => $usuario->tipo,
-                    'nombre' => $usuario->nombre,
-                    'apellido_paterno' => $usuario->aP,
-                    'apellido_materno' => $usuario->aM,
-                    'edad' => $usuario->edad,
-                    'telefono' => $usuario->telefono,
-                    'correo' => $usuario->correo,
-                    'rfc' => $usuario->rfc,
-                    'pagina_web' => $usuario->paginaWeb,
-                    'tipo_entidad' => $usuario->tipo,
-                    'rol' => ['nombre' => ucfirst($usuario->rol_nombre)],
-                    'aprobacion' => (bool) $usuario->aprobacion,
-                    'estatus' => ['nombre' => ucfirst($usuario->estatus_nombre)],
+                    'nombre' => $usuario->nombre ?? '',
+                    'apellido_paterno' => $usuario->aP ?? '',
+                    'apellido_materno' => $usuario->aM ?? '',
+                    'edad' => $usuario->edad ?? '',
+                    'telefono' => $usuario->telefono ?? '',
+                    'correo' => $usuario->correo ?? '',
+                    'rfc' => $usuario->rfc ?? '',
+                    'pagina_web' => $usuario->paginaWeb ?? '',
+                    'tipo_entidad' => $usuario->tipo ?? '',
+                    'rol' => ['nombre' => ucfirst($usuario->rol_nombre ?? '')],
+                    'aprobacion' => (bool) ($usuario->aprobacion ?? false),
+                    'estatus' => ['nombre' => ucfirst($usuario->estatus_nombre ?? '')],
                     'created_at' => $usuario->fundacion ?? 'No disponible'
                 ];
                 
-                Log::info('Datos del donante obtenidos exitosamente de la base de datos para usuario: ' . $usuario->correo);
+                Log::info('Datos del donante obtenidos de BD: ' . $usuario->correo);
                 return view('perfilDonante', compact('userData'));
-            } else {
-                Log::warning('No se encontró ningún usuario donante en la base de datos');
             }
             
         } catch (\Exception $e) {
-            Log::error('Error obteniendo datos del donante de la base de datos: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
+            Log::error('Error obteniendo datos de BD: ' . $e->getMessage());
         }
         
-        // ============================================
-        // PASO 3: Usar datos simulados como fallback
-        // ============================================
-        
-        Log::info('Usando datos simulados para donante - No se encontraron datos reales');
-        
+        // Datos simulados como último recurso
         $userData = [
             'nombre' => 'Juan Carlos',
             'apellido_paterno' => 'Mendoza',
