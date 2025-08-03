@@ -63,7 +63,7 @@
                 </div>
 
                 <!-- Módulo Estatus Solicitudes -->
-                <div class="module-card" onclick="#">
+                <div class="module-card" onclick="window.location.href='{{ route('donaciones.estatus') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="images/Estatus.png" alt="Solicitudes" class="icon-img">

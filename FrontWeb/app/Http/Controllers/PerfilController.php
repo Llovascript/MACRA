@@ -74,7 +74,7 @@ class PerfilController extends Controller
                 'edad' => 'nullable|integer|min:1|max:120',
                 'rfc' => 'nullable|string|max:13',
                 'paginaWeb' => 'nullable|url|max:255',
-                'tipo' => 'required|in:persona,organizacion',
+                'tipo' => 'required|in:persona,institucion',
             ]);
 
             // Preparar datos para FastAPI
@@ -273,7 +273,7 @@ class PerfilController extends Controller
                 'edad' => 'nullable|integer|min:1|max:120',
                 'rfc' => 'nullable|string|max:13',
                 'paginaWeb' => 'nullable|url|max:255',
-                'tipo' => 'required|in:persona,organizacion',
+                'tipo' => 'required|in:persona,institucion',
             ]);
 
             // Preparar datos para actualización
@@ -397,7 +397,7 @@ class PerfilController extends Controller
                             $message = $error['msg'];
 
                             if (strpos($message, 'Input should be') !== false && strpos($message, 'persona') !== false) {
-                                $errors[] = "El tipo debe ser 'persona' o 'organizacion'";
+                                $errors[] = "El tipo debe ser 'persona' o 'institucion'";
                             } elseif (strpos($message, 'value is not a valid email') !== false) {
                                 $errors[] = "El formato del correo electrónico no es válido";
                             } else {

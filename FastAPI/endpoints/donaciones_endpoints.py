@@ -139,4 +139,3 @@ def approve_donacion(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error actualizando aprobación de donación")
-

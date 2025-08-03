@@ -7,11 +7,11 @@ import enum
 
 class TipoUsuarioEnum(str, enum.Enum):
     persona = "persona"
-    organizacion = "organizacion"
+    institucion = "institucion"
 
 class TipoDonanteEnum(str, enum.Enum):
     persona = "persona"
-    organizacion = "organizacion"
+    institucion = "institucion"
 
 class Rol(Base):
     __tablename__ = 'roles'

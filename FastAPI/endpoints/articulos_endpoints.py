@@ -52,3 +52,4 @@ def create_presentacion(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error creando presentación")
+    
