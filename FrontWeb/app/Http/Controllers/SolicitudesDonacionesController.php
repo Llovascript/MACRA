@@ -16,7 +16,7 @@ class SolicitudesDonacionesController extends Controller
         try {
             $db = DB::connection();
             
-            // Obtener donaciones pendientes de aprobación (COLUMNAS CORRECTAS)
+            // Obtener donaciones pendientes de aprobación 
             $solicitudesPendientes = $db->table('donaciones')
                 ->leftJoin('usuarios', 'donaciones.usuario_id', '=', 'usuarios.id')
                 ->leftJoin('artPresentacion', 'donaciones.articuloP_id', '=', 'artPresentacion.id')
@@ -28,11 +28,11 @@ class SolicitudesDonacionesController extends Controller
                     'usuarios.aM as apellido_materno',
                     'articulos.nombre as articulo_nombre',
                     'donaciones.cantidad',
-                    'donaciones.fecha', // Cambiado de fecha_creacion a fecha
+                    'donaciones.fecha',
                     'donaciones.aprobacion'
                 )
-                ->where('donaciones.del', 0) // Cambiado de del_flag a del
-                ->where('donaciones.aprobacion', 0) // Solo donaciones pendientes
+                ->where('donaciones.del', 0) 
+                ->where('donaciones.aprobacion', 0) 
                 ->orderBy('donaciones.fecha', 'desc')
                 ->get();
 

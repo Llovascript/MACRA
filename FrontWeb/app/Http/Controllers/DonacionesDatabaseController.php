@@ -9,9 +9,6 @@ use Carbon\Carbon;
 
 class DonacionesDatabaseController extends Controller
 {
-    /**
-     * Verificar estructura de tablas relacionadas con donaciones
-     */
     public function checkDonacionesStructure()
     {
         try {
@@ -51,6 +48,7 @@ class DonacionesDatabaseController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error verificando estructura de donaciones: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Error verificando estructura: ' . $e->getMessage()
@@ -58,9 +56,6 @@ class DonacionesDatabaseController extends Controller
         }
     }
 
-    /**
-     * Crear categorías básicas si no existen
-     */
     public function createBasicCategories()
     {
         try {
@@ -98,6 +93,8 @@ class DonacionesDatabaseController extends Controller
                 ];
             }
 
+            Log::info('Categorías básicas procesadas', ['total' => count($categoriasCreadas)]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Categorías básicas verificadas/creadas exitosamente',
@@ -105,6 +102,7 @@ class DonacionesDatabaseController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error creando categorías básicas: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error creando categorías: ' . $e->getMessage()
@@ -112,9 +110,6 @@ class DonacionesDatabaseController extends Controller
         }
     }
 
-    /**
-     * Crear unidades básicas si no existen
-     */
     public function createBasicUnidades()
     {
         try {
@@ -157,6 +152,8 @@ class DonacionesDatabaseController extends Controller
                 ];
             }
 
+            Log::info('Unidades básicas procesadas', ['total' => count($unidadesCreadas)]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Unidades básicas verificadas/creadas exitosamente',
@@ -164,6 +161,7 @@ class DonacionesDatabaseController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error creando unidades básicas: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error creando unidades: ' . $e->getMessage()
@@ -171,209 +169,18 @@ class DonacionesDatabaseController extends Controller
         }
     }
 
-    /**
-     * Crear donaciones de prueba realistas
-     */
-    public function createTestDonaciones()
-    {
-        try {
-            $db = DB::connection();
-
-            // Verificar que existan donantes
-            $donantes = [];
-            try {
-                $donantes = $db->table('usuarios')
-                    ->leftJoin('roles', 'usuarios.rol_id', '=', 'roles.id')
-                    ->where('usuarios.del', 0)
-                    ->where('usuarios.aprobacion', 1)
-                    ->where('roles.nombre', 'donante')
-                    ->select('usuarios.id', 'usuarios.nombre', 'usuarios.aP', 'usuarios.aM')
-                    ->get();
-            } catch (\Exception $e) {
-                // Fallback sin JOIN
-                $donantes = $db->table('usuarios')
-                    ->where('usuarios.del', 0)
-                    ->where('usuarios.aprobacion', 1)
-                    ->where('usuarios.rol_id', 2) // Asumiendo que 2 es donante
-                    ->select('usuarios.id', 'usuarios.nombre', 'usuarios.aP', 'usuarios.aM')
-                    ->get();
-            }
-
-            if ($donantes->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No hay donantes disponibles. Cree donantes primero usando /admin/create-test-donante',
-                    'solucion' => 'Vaya a /admin/create-test-donante para crear un donante de prueba'
-                ]);
-            }
-
-            // Verificar que existan artículos con presentaciones
-            $articulosPresentaciones = [];
-            try {
-                $articulosPresentaciones = $db->table('artPresentacion')
-                    ->leftJoin('articulos', 'artPresentacion.articulo_id', '=', 'articulos.id')
-                    ->leftJoin('unidades', 'artPresentacion.unidad_id', '=', 'unidades.id')
-                    ->where('artPresentacion.del', 0)
-                    ->where('articulos.del', 0)
-                    ->select(
-                        'artPresentacion.id as presentacion_id',
-                        'articulos.nombre as articulo_nombre',
-                        'unidades.nombre as unidad_nombre'
-                    )
-                    ->get();
-            } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error accediendo a artículos: ' . $e->getMessage(),
-                    'solucion' => 'Verifique que las tablas artPresentacion, articulos y unidades existan'
-                ]);
-            }
-
-            if ($articulosPresentaciones->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No hay artículos con presentaciones disponibles.',
-                    'solucion' => 'Use /admin/donaciones/create-articulos para crear artículos básicos'
-                ]);
-            }
-
-            // Verificar que exista al menos un estatus
-            $estatus = [];
-            try {
-                $estatus = $db->table('estatusG')->first();
-            } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se puede acceder a la tabla estatusG: ' . $e->getMessage()
-                ]);
-            }
-
-            if (!$estatus) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No hay estatus disponibles en la tabla estatusG'
-                ]);
-            }
-
-            // Donaciones de prueba realistas (CON COLUMNAS CORRECTAS)
-            $donacionesPrueba = [
-                [
-                    'tipo_donante' => 'Persona Física',
-                    'cantidad' => 5,
-                    'fecha' => Carbon::now()->subDays(3)->format('Y-m-d'),
-                    'aprobacion' => 0,
-                    'del' => 0,
-                    'estatus_id' => $estatus->id
-                ],
-                [
-                    'tipo_donante' => 'Persona Moral',
-                    'cantidad' => 10,
-                    'fecha' => Carbon::now()->subDays(2)->format('Y-m-d'),
-                    'aprobacion' => 0,
-                    'del' => 0,
-                    'estatus_id' => $estatus->id
-                ],
-                [
-                    'tipo_donante' => 'Persona Física',
-                    'cantidad' => 20,
-                    'fecha' => Carbon::now()->subDays(1)->format('Y-m-d'),
-                    'aprobacion' => 0,
-                    'del' => 0,
-                    'estatus_id' => $estatus->id
-                ],
-                [
-                    'tipo_donante' => 'Persona Moral',
-                    'cantidad' => 15,
-                    'fecha' => Carbon::now()->format('Y-m-d'),
-                    'aprobacion' => 0,
-                    'del' => 0,
-                    'estatus_id' => $estatus->id
-                ],
-                [
-                    'tipo_donante' => 'Persona Física',
-                    'cantidad' => 8,
-                    'fecha' => Carbon::now()->format('Y-m-d'),
-                    'aprobacion' => 0,
-                    'del' => 0,
-                    'estatus_id' => $estatus->id
-                ]
-            ];
-
-            $donacionesCreadas = [];
-            $errores = [];
-
-            foreach ($donacionesPrueba as $index => $donacionData) {
-                try {
-                    // Seleccionar donante y artículo aleatorio
-                    $donante = $donantes->random();
-                    $articulo = $articulosPresentaciones->random();
-
-                    $donacionCompleta = array_merge($donacionData, [
-                        'usuario_id' => $donante->id,
-                        'articuloP_id' => $articulo->presentacion_id
-                    ]);
-
-                    $donacionId = $db->table('donaciones')->insertGetId($donacionCompleta);
-
-                    $donacionesCreadas[] = [
-                        'id' => $donacionId,
-                        'donante_nombre' => $donante->nombre . ' ' . ($donante->aP ?? '') . ' ' . ($donante->aM ?? ''),
-                        'articulo' => $articulo->articulo_nombre ?? 'N/A',
-                        'unidad' => $articulo->unidad_nombre ?? 'N/A',
-                        'cantidad' => $donacionData['cantidad'],
-                        'tipo_donante' => $donacionData['tipo_donante'],
-                        'fecha' => $donacionData['fecha']
-                    ];
-
-                    Log::info('Donación de prueba creada', [
-                        'donacion_id' => $donacionId,
-                        'donante' => $donante->nombre,
-                        'articulo' => $articulo->articulo_nombre ?? 'N/A'
-                    ]);
-
-                } catch (\Exception $e) {
-                    $errores[] = "Error creando donación {$index}: " . $e->getMessage();
-                    Log::error("Error creando donación de prueba {$index}", ['error' => $e->getMessage()]);
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Donaciones de prueba creadas exitosamente',
-                'donaciones_creadas' => $donacionesCreadas,
-                'errores' => $errores,
-                'resumen' => [
-                    'total_creadas' => count($donacionesCreadas),
-                    'total_errores' => count($errores),
-                    'donantes_disponibles' => count($donantes),
-                    'articulos_disponibles' => count($articulosPresentaciones)
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error creando donaciones de prueba: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al crear donaciones de prueba: ' . $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * Crear artículos y presentaciones de prueba si no existen
-     */
     public function createTestArticulos()
     {
         try {
             $db = DB::connection();
 
-            // Verificar categorías
+            // Verificar categorías disponibles
             $categorias = $db->table('categoriasArt')->get();
             if ($categorias->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No hay categorías en la tabla categoriasArt. Cree categorías primero.'
+                    'message' => 'No hay categorías en la tabla categoriasArt. Cree categorías primero.',
+                    'solucion' => 'Use /admin/donaciones/create-categories'
                 ]);
             }
 
@@ -384,12 +191,13 @@ class DonacionesDatabaseController extends Controller
             if (!$perecederos) $perecederos = $categorias->first();
             if (!$noPerecederos) $noPerecederos = $categorias->skip(1)->first() ?? $categorias->first();
 
-            // Verificar unidades
+            // Verificar unidades disponibles
             $unidades = $db->table('unidades')->get();
             if ($unidades->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No hay unidades en la tabla unidades. Cree unidades primero.'
+                    'message' => 'No hay unidades en la tabla unidades. Cree unidades primero.',
+                    'solucion' => 'Use /admin/donaciones/create-unidades'
                 ]);
             }
 
@@ -398,7 +206,7 @@ class DonacionesDatabaseController extends Controller
             $kilogramo = $unidades->where('nombre', 'kilogramo')->first() ?? $unidades->skip(1)->first() ?? $unidades->first();
             $pieza = $unidades->where('nombre', 'pieza')->first() ?? $unidades->skip(2)->first() ?? $unidades->first();
 
-            // Artículos de prueba
+            // Definir artículos de prueba
             $articulosPrueba = [
                 [
                     'nombre' => 'Leche',
@@ -423,19 +231,32 @@ class DonacionesDatabaseController extends Controller
                     'categoria_id' => $noPerecederos->id,
                     'unidad_id' => $litro->id,
                     'del' => 0
+                ],
+                [
+                    'nombre' => 'Pan',
+                    'categoria_id' => $perecederos->id,
+                    'unidad_id' => $pieza->id,
+                    'del' => 0
+                ],
+                [
+                    'nombre' => 'Frijoles',
+                    'categoria_id' => $noPerecederos->id,
+                    'unidad_id' => $kilogramo->id,
+                    'del' => 0
                 ]
             ];
 
             $articulosCreados = [];
 
             foreach ($articulosPrueba as $articuloData) {
-                // Verificar si ya existe
+                // Verificar si el artículo ya existe
                 $existingArticulo = $db->table('articulos')
                     ->where('nombre', $articuloData['nombre'])
                     ->where('del', 0)
                     ->first();
 
                 if ($existingArticulo) {
+                    Log::info("Artículo ya existe: {$articuloData['nombre']}");
                     continue;
                 }
 
@@ -446,7 +267,7 @@ class DonacionesDatabaseController extends Controller
                     'del' => $articuloData['del']
                 ]);
 
-                // Crear presentación
+                // Crear presentación del artículo
                 $presentacionId = $db->table('artPresentacion')->insertGetId([
                     'cantidad' => 1,
                     'del' => 0,
@@ -462,17 +283,25 @@ class DonacionesDatabaseController extends Controller
                     'nombre' => $articuloData['nombre'],
                     'unidad' => $unidadNombre
                 ];
+
+                Log::info("Artículo creado: {$articuloData['nombre']} (ID: {$articuloId})");
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Artículos de prueba creados exitosamente',
+                'message' => 'Artículos de prueba procesados exitosamente',
                 'articulos_creados' => $articulosCreados,
-                'categorias_disponibles' => $categorias,
-                'unidades_disponibles' => $unidades
+                'categorias_disponibles' => $categorias->pluck('nombre'),
+                'unidades_disponibles' => $unidades->pluck('nombre'),
+                'resumen' => [
+                    'articulos_nuevos' => count($articulosCreados),
+                    'categorias_usadas' => 2,
+                    'unidades_usadas' => 3
+                ]
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error creando artículos de prueba: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error creando artículos: ' . $e->getMessage()
@@ -480,9 +309,96 @@ class DonacionesDatabaseController extends Controller
         }
     }
 
-    /**
-     * Obtener donaciones con información completa para testing
-     */
+    public function createTestDonaciones()
+    {
+        try {
+            $db = DB::connection();
+
+            Log::info('=== INICIANDO CREACIÓN DE DONACIONES CON MÚLTIPLES DONANTES ===');
+
+            // PASO 1: Obtener TODOS los donantes disponibles
+            $todosLosDonantes = $this->obtenerTodosLosDonantes($db);
+            
+            if ($todosLosDonantes->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay donantes disponibles. Cree donantes primero.',
+                    'solucion' => 'Use /admin/create-test-donante para crear donantes de prueba'
+                ]);
+            }
+
+            Log::info('Donantes encontrados: ' . count($todosLosDonantes));
+            foreach ($todosLosDonantes as $donante) {
+                Log::info("- {$donante->nombre} {$donante->aP} {$donante->aM} (ID: {$donante->id})");
+            }
+
+            // PASO 2: Verificar artículos con presentaciones
+            $articulosPresentaciones = $this->obtenerArticulosConPresentaciones($db);
+            
+            if ($articulosPresentaciones->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay artículos con presentaciones disponibles.',
+                    'solucion' => 'Use /admin/donaciones/create-articulos para crear artículos básicos'
+                ]);
+            }
+
+            // PASO 3: Verificar estatus
+            $estatus = $db->table('estatusG')->first();
+            if (!$estatus) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay estatus disponibles en la tabla estatusG'
+                ]);
+            }
+
+            // PASO 4: Crear donaciones rotando entre diferentes donantes
+            $donacionesCreadas = $this->crearDonacionesConRotacion(
+                $db, 
+                $todosLosDonantes, 
+                $articulosPresentaciones, 
+                $estatus
+            );
+
+            // PASO 5: Generar estadísticas
+            $distribucionDonantes = [];
+            foreach ($donacionesCreadas['exitosas'] as $donacion) {
+                $nombre = $donacion['donante_nombre'];
+                if (!isset($distribucionDonantes[$nombre])) {
+                    $distribucionDonantes[$nombre] = 0;
+                }
+                $distribucionDonantes[$nombre]++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Donaciones de prueba creadas exitosamente con MÚLTIPLES donantes',
+                'donaciones_creadas' => $donacionesCreadas['exitosas'],
+                'errores' => $donacionesCreadas['errores'],
+                'resumen' => [
+                    'total_creadas' => count($donacionesCreadas['exitosas']),
+                    'total_errores' => count($donacionesCreadas['errores']),
+                    'donantes_disponibles' => count($todosLosDonantes),
+                    'donantes_utilizados' => count($distribucionDonantes),
+                    'distribución_por_donante' => $distribucionDonantes,
+                    'articulos_disponibles' => count($articulosPresentaciones)
+                ],
+                'instrucciones' => [
+                    'Ve a /solicitudesDonaciones para ver las donaciones',
+                    'Cada fila mostrará un donante diferente',
+                    'Puedes aprobar/rechazar cada donación individualmente'
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error creando donaciones de prueba: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear donaciones de prueba: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function getDonacionesCompletas()
     {
         try {
@@ -514,7 +430,7 @@ class DonacionesDatabaseController extends Controller
                 ->orderBy('donaciones.fecha', 'desc')
                 ->get();
 
-            // Separar por estado
+            // Clasificar por estado
             $pendientes = $donaciones->where('del', 0)->where('aprobacion', 0);
             $aprobadas = $donaciones->where('del', 0)->where('aprobacion', 1);
             $rechazadas = $donaciones->where('del', 1);
@@ -536,6 +452,7 @@ class DonacionesDatabaseController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error obteniendo donaciones completas: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Error obteniendo donaciones: ' . $e->getMessage()
@@ -543,26 +460,26 @@ class DonacionesDatabaseController extends Controller
         }
     }
 
-    /**
-     * Limpiar donaciones de prueba
-     */
     public function clearTestDonaciones()
     {
         try {
             $db = DB::connection();
             
             $deleted = $db->table('donaciones')
-                ->where('cantidad', '<=', 20) // Eliminar donaciones de prueba basándose en cantidad pequeña
-                ->where('aprobacion', 0)
-                ->where('del', 0)
+                ->where('cantidad', '<=', 30) // Filtro para donaciones de prueba
+                ->where('aprobacion', 0)      // Solo pendientes
+                ->where('del', 0)             // No eliminadas
                 ->delete();
+
+            Log::info("Donaciones de prueba eliminadas: {$deleted}");
 
             return response()->json([
                 'success' => true,
-                'message' => "Se eliminaron {$deleted} donaciones de prueba"
+                'message' => "Se eliminaron {$deleted} donaciones de prueba exitosamente"
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error eliminando donaciones de prueba: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error eliminando donaciones de prueba: ' . $e->getMessage()
@@ -570,59 +487,16 @@ class DonacionesDatabaseController extends Controller
         }
     }
 
-    /**
-     * Verificar datos disponibles para crear donaciones de prueba
-     */
     public function checkAvailableData()
     {
         try {
             $db = DB::connection();
             
-            // Verificar usuarios donantes
-            $donantes = [];
-            try {
-                $donantes = $db->table('usuarios')
-                    ->leftJoin('roles', 'usuarios.rol_id', '=', 'roles.id')
-                    ->select('usuarios.id', 'usuarios.nombre', 'usuarios.aP', 'usuarios.aM', 'roles.nombre as rol')
-                    ->where('usuarios.del', 0)
-                    ->where('usuarios.aprobacion', 1)
-                    ->where('roles.nombre', 'donante')
-                    ->get();
-            } catch (\Exception $e) {
-                // Si hay error con roles, intentar sin JOIN
-                try {
-                    $donantes = $db->table('usuarios')
-                        ->select('usuarios.id', 'usuarios.nombre', 'usuarios.aP', 'usuarios.aM', 'usuarios.rol_id')
-                        ->where('usuarios.del', 0)
-                        ->where('usuarios.aprobacion', 1)
-                        ->where('usuarios.rol_id', 2) // Asumiendo que 2 es donante
-                        ->get();
-                } catch (\Exception $e2) {
-                    $donantes = collect([]);
-                }
-            }
-
-            // Verificar artículos con presentaciones
-            $articulos = [];
-            try {
-                $articulos = $db->table('artPresentacion')
-                    ->leftJoin('articulos', 'artPresentacion.articulo_id', '=', 'articulos.id')
-                    ->leftJoin('categoriasArt', 'articulos.categoria_id', '=', 'categoriasArt.id')
-                    ->leftJoin('unidades', 'artPresentacion.unidad_id', '=', 'unidades.id')
-                    ->select(
-                        'artPresentacion.id as presentacion_id',
-                        'articulos.id as articulo_id',
-                        'articulos.nombre as articulo_nombre',
-                        'categoriasArt.nombre as categoria',
-                        'unidades.nombre as unidad',
-                        'artPresentacion.cantidad as cantidad_presentacion'
-                    )
-                    ->where('artPresentacion.del', 0)
-                    ->where('articulos.del', 0)
-                    ->get();
-            } catch (\Exception $e) {
-                $articulos = collect([]);
-            }
+            // Verificar donantes
+            $donantes = $this->obtenerTodosLosDonantes($db);
+            
+            // Verificar artículos
+            $articulos = $this->obtenerArticulosConPresentaciones($db);
 
             return response()->json([
                 'success' => true,
@@ -632,15 +506,166 @@ class DonacionesDatabaseController extends Controller
                 ],
                 'resumen' => [
                     'total_donantes' => count($donantes),
-                    'total_articulos' => count($articulos)
+                    'total_articulos' => count($articulos),
+                    'listo_para_crear_donaciones' => count($donantes) > 0 && count($articulos) > 0
                 ]
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error verificando datos disponibles: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Error verificando datos disponibles: ' . $e->getMessage()
             ]);
         }
+    }
+
+    // Métodos privados de soporte
+
+    private function obtenerTodosLosDonantes($db)
+    {
+        try {
+            // Intentar con JOIN a la tabla roles
+            return $db->table('usuarios')
+                ->leftJoin('roles', 'usuarios.rol_id', '=', 'roles.id')
+                ->where('usuarios.del', 0)
+                ->where('usuarios.aprobacion', 1)
+                ->where('roles.nombre', 'donante')
+                ->select('usuarios.id', 'usuarios.nombre', 'usuarios.aP', 'usuarios.aM')
+                ->get();
+        } catch (\Exception $e) {
+            // Fallback sin JOIN si hay problemas con roles
+            Log::warning('Error con JOIN a roles, usando fallback: ' . $e->getMessage());
+            try {
+                return $db->table('usuarios')
+                    ->where('usuarios.del', 0)
+                    ->where('usuarios.aprobacion', 1)
+                    ->where('usuarios.rol_id', 2) // Asumiendo que 2 es donante
+                    ->select('usuarios.id', 'usuarios.nombre', 'usuarios.aP', 'usuarios.aM')
+                    ->get();
+            } catch (\Exception $e2) {
+                Log::error('Error obteniendo donantes: ' . $e2->getMessage());
+                return collect([]);
+            }
+        }
+    }
+
+    private function obtenerArticulosConPresentaciones($db)
+    {
+        try {
+            return $db->table('artPresentacion')
+                ->leftJoin('articulos', 'artPresentacion.articulo_id', '=', 'articulos.id')
+                ->leftJoin('unidades', 'artPresentacion.unidad_id', '=', 'unidades.id')
+                ->where('artPresentacion.del', 0)
+                ->where('articulos.del', 0)
+                ->select(
+                    'artPresentacion.id as presentacion_id',
+                    'articulos.nombre as articulo_nombre',
+                    'unidades.nombre as unidad_nombre'
+                )
+                ->get();
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo artículos con presentaciones: ' . $e->getMessage());
+            return collect([]);
+        }
+    }
+
+    private function crearDonacionesConRotacion($db, $donantes, $articulos, $estatus)
+    {
+        // Definir donaciones de prueba con variedad
+        $donacionesPrueba = [
+            [
+                'tipo_donante' => 'Persona Física',
+                'cantidad' => 5,
+                'fecha' => Carbon::now()->subDays(4)->format('Y-m-d')
+            ],
+            [
+                'tipo_donante' => 'Persona Moral',
+                'cantidad' => 12,
+                'fecha' => Carbon::now()->subDays(3)->format('Y-m-d')
+            ],
+            [
+                'tipo_donante' => 'Persona Física',
+                'cantidad' => 3,
+                'fecha' => Carbon::now()->subDays(2)->format('Y-m-d')
+            ],
+            [
+                'tipo_donante' => 'Persona Moral',
+                'cantidad' => 25,
+                'fecha' => Carbon::now()->subDays(1)->format('Y-m-d')
+            ],
+            [
+                'tipo_donante' => 'Persona Física',
+                'cantidad' => 8,
+                'fecha' => Carbon::now()->format('Y-m-d')
+            ],
+            [
+                'tipo_donante' => 'Persona Moral',
+                'cantidad' => 15,
+                'fecha' => Carbon::now()->format('Y-m-d')
+            ],
+            [
+                'tipo_donante' => 'Persona Física',
+                'cantidad' => 10,
+                'fecha' => Carbon::now()->format('Y-m-d')
+            ]
+        ];
+
+        $donacionesExitosas = [];
+        $errores = [];
+
+        foreach ($donacionesPrueba as $index => $donacionData) {
+            try {
+                // TÉCNICA DE ROTACIÓN: usar módulo para circular entre donantes
+                $donante = $donantes[$index % count($donantes)];
+                
+                // Seleccionar artículo aleatorio
+                $articulo = $articulos->random();
+
+                // Preparar datos completos de la donación
+                $donacionCompleta = array_merge($donacionData, [
+                    'usuario_id' => $donante->id,
+                    'articuloP_id' => $articulo->presentacion_id,
+                    'aprobacion' => 0, // Pendiente de aprobación
+                    'del' => 0,        // No eliminada
+                    'estatus_id' => $estatus->id
+                ]);
+
+                // Insertar donación en la base de datos
+                $donacionId = $db->table('donaciones')->insertGetId($donacionCompleta);
+
+                $nombreCompleto = trim($donante->nombre . ' ' . ($donante->aP ?? '') . ' ' . ($donante->aM ?? ''));
+
+                $donacionesExitosas[] = [
+                    'id' => $donacionId,
+                    'donante_nombre' => $nombreCompleto,
+                    'donante_id' => $donante->id,
+                    'articulo' => $articulo->articulo_nombre ?? 'N/A',
+                    'unidad' => $articulo->unidad_nombre ?? 'N/A',
+                    'cantidad' => $donacionData['cantidad'],
+                    'tipo_donante' => $donacionData['tipo_donante'],
+                    'fecha' => $donacionData['fecha']
+                ];
+
+                Log::info('Donación creada exitosamente', [
+                    'numero' => $index + 1,
+                    'donacion_id' => $donacionId,
+                    'donante' => $nombreCompleto,
+                    'articulo' => $articulo->articulo_nombre ?? 'N/A'
+                ]);
+
+            } catch (\Exception $e) {
+                $errores[] = "Error creando donación " . ($index + 1) . ": " . $e->getMessage();
+                Log::error('Error creando donación de prueba', [
+                    'numero' => $index + 1,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        return [
+            'exitosas' => $donacionesExitosas,
+            'errores' => $errores
+        ];
     }
 }
