@@ -65,7 +65,7 @@
                         <div class="input-field half-width">
                             <i class="fas fa-globe"></i>
                             <input type="text" id="register-website" name="pagina_web"
-                                placeholder="Página web (opcional)" autocomplete="url" />
+                                placeholder="Sitio web opcional (https://...)" autocomplete="url" />
                         </div>
                     </div>
 
@@ -123,7 +123,7 @@
                             <select id="register-tipo-entidad" name="tipo_entidad" required>
                                 <option value="" disabled selected>Seleccionar tipo de entidad</option>
                                 <option value="persona">Persona</option>
-                                <option value="organizacion">Organización</option>
+                                {{-- <option value="organizacion">Institución</option> --}}
                             </select>
                         </div>
                     </div>
@@ -145,8 +145,8 @@
                         </div>
                     </div>
 
-                    <input type="hidden" name="rol_id" value="1" />
-                    <input type="submit" class="btn" value="SIGN UP" />
+                    <!-- REMOVIDO el input hidden del rol_id para que sea mapeado automáticamente -->
+                    <input type="submit" class="btn" value="REGISTRARSE" />
                     <div id="register-error" class="error-message" style="display: none;"></div>
                     <div id="register-success" class="success-message" style="display: none;"></div>
                     <p class="social-text">O regístrate con plataformas sociales</p>

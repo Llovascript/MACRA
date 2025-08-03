@@ -19,13 +19,11 @@ if (!sign_in_btn || !sign_up_btn || !container) {
 // Animaciones del formulario
 sign_up_btn?.addEventListener("click", (e) => {
   e.preventDefault()
-  console.log("Cambiando a modo registro")
   container.classList.add("sign-up-mode")
 })
 
 sign_in_btn?.addEventListener("click", (e) => {
   e.preventDefault()
-  console.log("Cambiando a modo login")
   container.classList.remove("sign-up-mode")
 })
 
@@ -33,7 +31,6 @@ sign_in_btn?.addEventListener("click", (e) => {
 function showError(elementId, message) {
   const errorElement = document.getElementById(elementId)
   if (errorElement) {
-    // Asegurar que el message sea string
     let displayMessage = message
     if (typeof message === 'object') {
       displayMessage = JSON.stringify(message)
@@ -41,7 +38,7 @@ function showError(elementId, message) {
 
     errorElement.textContent = displayMessage
     errorElement.style.display = "block"
-    // Ocultar mensaje de éxito si existe
+
     const successElement = document.getElementById(elementId.replace("error", "success"))
     if (successElement) {
       successElement.style.display = "none"
@@ -55,7 +52,6 @@ function showSuccess(elementId, message) {
   if (successElement) {
     successElement.textContent = message
     successElement.style.display = "block"
-    // Ocultar mensaje de error si existe
     const errorElement = document.getElementById(elementId.replace("success", "error"))
     if (errorElement) {
       errorElement.style.display = "none"
@@ -79,6 +75,20 @@ function toggleFormState(form, disabled) {
   })
 }
 
+// Función para determinar el mensaje de redirección basado en el rol
+function getRoleRedirectMessage(userRole) {
+  switch (userRole) {
+    case 1:
+      return "Login exitoso! Redirigiendo al panel de administrador..."
+    case 2:
+      return "Login exitoso! Redirigiendo al menú de donantes..."
+    case 3:
+      return "Login exitoso! Redirigiendo al menú de beneficiarios..."
+    default:
+      return "Login exitoso! Redirigiendo..."
+  }
+}
+
 // Manejar envío del formulario de login
 loginForm?.addEventListener("submit", async (e) => {
   e.preventDefault()
@@ -91,21 +101,13 @@ loginForm?.addEventListener("submit", async (e) => {
     toggleFormState(loginForm, true)
     submitBtn.value = "Iniciando sesión..."
 
-    // Obtener datos del formulario
     const emailInput = document.getElementById("login-email")
     const passwordInput = document.getElementById("login-password")
 
     const correo = emailInput?.value?.trim() || ""
     const contraseña = passwordInput?.value || ""
 
-    console.log("Valores obtenidos:", {
-      correo: correo,
-      contraseña: contraseña ? "***" : "(vacío)",
-      emailElement: !!emailInput,
-      passwordElement: !!passwordInput,
-    })
-
-    // Validación mejorada
+    // Validaciones
     if (!correo || correo === "") {
       showError("login-error", "Por favor ingresa tu correo electrónico")
       return
@@ -116,14 +118,11 @@ loginForm?.addEventListener("submit", async (e) => {
       return
     }
 
-    // Validación básica de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(correo)) {
       showError("login-error", "Por favor ingresa un correo válido")
       return
     }
-
-    console.log("Enviando petición de login...")
 
     const response = await fetch("/auth/login", {
       method: "POST",
@@ -139,20 +138,21 @@ loginForm?.addEventListener("submit", async (e) => {
     })
 
     const data = await response.json()
-    console.log("Respuesta del servidor:", data)
 
     if (response.ok && data.success) {
-      showSuccess("login-success", "Login exitoso! Redirigiendo...")
+      const userRole = data.user_role
+      const redirectMessage = getRoleRedirectMessage(userRole)
 
-      // Redirigir después de un breve delay
+      showSuccess("login-success", redirectMessage)
+
       setTimeout(() => {
-        window.location.href = data.redirect_url || "/dashboard"
-      }, 1500)
+        const redirectUrl = data.redirect_url || "/dashboard"
+        window.location.href = redirectUrl
+      }, 2000)
     } else {
       let errorMessage = "Error en el login"
 
       if (data.errors) {
-        // Si hay errores de validación específicos
         const firstError = Object.values(data.errors)[0]
         if (Array.isArray(firstError)) {
           errorMessage = firstError[0]
@@ -174,7 +174,7 @@ loginForm?.addEventListener("submit", async (e) => {
   }
 })
 
-// Manejar envío del formulario de registro EXTENDIDO
+// Manejar envío del formulario de registro
 registerForm?.addEventListener("submit", async (e) => {
   e.preventDefault()
   hideMessages("register")
@@ -186,7 +186,7 @@ registerForm?.addEventListener("submit", async (e) => {
     toggleFormState(registerForm, true)
     submitBtn.value = "Registrando..."
 
-    // Obtener datos del formulario extendido
+    // Obtener datos del formulario
     const nameInput = document.getElementById("register-name")
     const websiteInput = document.getElementById("register-website")
     const apellidoPaternoInput = document.getElementById("register-apellido-paterno")
@@ -200,41 +200,42 @@ registerForm?.addEventListener("submit", async (e) => {
     const rfcInput = document.getElementById("register-rfc")
     const profileSelect = document.getElementById("register-profile")
 
-    // DEBUG: Verificar elementos select
-    console.log("DEBUG - Elementos select encontrados:")
-    console.log("- tipoEntidadSelect:", !!tipoEntidadSelect, tipoEntidadSelect?.value)
-    console.log("- profileSelect:", !!profileSelect, profileSelect?.value)
+    // Función para mapear perfil a rol_id
+    function mapPerfilToRolId(perfil) {
+      const perfilLower = perfil?.toLowerCase()?.trim()
 
-    // Recopilar todos los datos
-    const formData = {
-      nombre: nameInput?.value?.trim() || "",
-      pagina_web: websiteInput?.value?.trim() || "",
-      apellido_paterno: apellidoPaternoInput?.value?.trim() || "",
-      correo: emailInput?.value?.trim() || "",
-      apellido_materno: apellidoMaternoInput?.value?.trim() || "",
-      contraseña: passwordInput?.value || "",
-      edad: edadInput?.value || "",
-      confirmar_contraseña: confirmInput?.value || "",
-      telefono: telefonoInput?.value?.trim() || "",
-      tipo_entidad: tipoEntidadSelect?.value || "",
-      rfc: rfcInput?.value?.trim() || "",
-      perfil: profileSelect?.value || "",
-      rol_id: 1
+      switch (perfilLower) {
+        case 'donante':
+          return 2
+        case 'beneficiario':
+          return 3
+        default:
+          return 1
+      }
     }
 
-    console.log("DEBUG - Datos de registro obtenidos:")
-    console.log("- nombre:", `'${formData.nombre}'`)
-    console.log("- apellido_paterno:", `'${formData.apellido_paterno}'`)
-    console.log("- correo:", `'${formData.correo}'`)
-    console.log("- contraseña:", formData.contraseña ? `***${formData.contraseña.length}chars` : "(vacío)")
-    console.log("- confirmar_contraseña:", formData.confirmar_contraseña ? `***${formData.confirmar_contraseña.length}chars` : "(vacío)")
-    console.log("- tipo_entidad:", `'${formData.tipo_entidad}'`)
-    console.log("- perfil:", `'${formData.perfil}'`)
-    console.log("- edad:", `'${formData.edad}'`)
-    console.log("- telefono:", `'${formData.telefono}'`)
-    console.log("- rfc:", `'${formData.rfc}'`)
+    // Recopilar datos
+    const perfilSeleccionado = profileSelect?.value || ""
+    const rolIdMapeado = mapPerfilToRolId(perfilSeleccionado)
 
-    // Validaciones mejoradas
+    const formData = {
+      nombre: nameInput?.value?.trim() || "",
+      apellido_paterno: apellidoPaternoInput?.value?.trim() || "",
+      apellido_materno: apellidoMaternoInput?.value?.trim() || "",
+      correo: emailInput?.value?.trim() || "",
+      contraseña: passwordInput?.value || "",
+      confirmar_contraseña: confirmInput?.value || "",
+      tipo_entidad: tipoEntidadSelect?.value || "",
+      perfil: perfilSeleccionado,
+
+      // Campos opcionales
+      pagina_web: websiteInput?.value?.trim() || "",
+      edad: edadInput?.value || "",
+      telefono: telefonoInput?.value?.trim() || "",
+      rfc: rfcInput?.value?.trim() || ""
+    }
+
+    // Validaciones
     if (!formData.nombre) {
       showError("register-error", "Por favor ingresa tu nombre")
       return
@@ -270,14 +271,12 @@ registerForm?.addEventListener("submit", async (e) => {
       return
     }
 
-    // Validación básica de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.correo)) {
       showError("register-error", "Por favor ingresa un correo válido")
       return
     }
 
-    // Validar que las contraseñas coincidan
     if (formData.contraseña !== formData.confirmar_contraseña) {
       showError("register-error", "Las contraseñas no coinciden")
       return
@@ -288,21 +287,17 @@ registerForm?.addEventListener("submit", async (e) => {
       return
     }
 
-    // Validar edad si se proporciona
     if (formData.edad && (formData.edad < 18 || formData.edad > 120)) {
       showError("register-error", "La edad debe estar entre 18 y 120 años")
       return
     }
 
-    // Validar RFC si se proporciona
     if (formData.rfc && formData.rfc.length < 10) {
       showError("register-error", "El RFC debe tener al menos 10 caracteres")
       return
     }
 
-    console.log("Enviando petición de registro...")
-
-    // Preparar datos para el servidor (mapear nombres de campos)
+    // Preparar datos para el servidor
     const serverData = {
       nombre: formData.nombre,
       apellido_paterno: formData.apellido_paterno,
@@ -310,41 +305,24 @@ registerForm?.addEventListener("submit", async (e) => {
       contraseña: formData.contraseña,
       confirmar_contraseña: formData.confirmar_contraseña,
       perfil: formData.perfil,
-      rol_id: formData.rol_id,
+      tipo_entidad: formData.tipo_entidad,
 
-      // Mapear campos opcionales
+      // Campos opcionales
       apellido_materno: formData.apellido_materno || undefined,
       pagina_web: formData.pagina_web || undefined,
       edad: formData.edad ? parseInt(formData.edad) : undefined,
       telefono: formData.telefono || undefined,
-      rfc: formData.rfc || undefined,
-
-      // Mapear tipo_entidad correctamente
-      tipo: formData.tipo_entidad, // persona -> persona, organizacion -> organizacion
-      tipo_entidad: formData.tipo_entidad // También para Laravel
+      rfc: formData.rfc || undefined
     }
 
-    // Remover campos undefined (pero mantener confirmar_contraseña)
+    // Remover campos undefined
     Object.keys(serverData).forEach(key => {
       if (serverData[key] === undefined || serverData[key] === '') {
-        // No eliminar confirmar_contraseña aunque esté vacío
         if (key !== 'confirmar_contraseña') {
           delete serverData[key]
         }
       }
     })
-
-    console.log("DEBUG - Datos para enviar al servidor:")
-    console.log("- nombre:", `'${serverData.nombre}'`)
-    console.log("- apellido_paterno:", `'${serverData.apellido_paterno}'`)
-    console.log("- correo:", `'${serverData.correo}'`)
-    console.log("- contraseña:", serverData.contraseña ? "***" : "(vacío)")
-    console.log("- confirmar_contraseña:", serverData.confirmar_contraseña ? "***" : "(vacío)")
-    console.log("- tipo (mapeado):", `'${serverData.tipo}'`)
-    console.log("- perfil:", `'${serverData.perfil}'`)
-    if (serverData.edad) console.log("- edad:", serverData.edad)
-    if (serverData.telefono) console.log("- telefono:", `'${serverData.telefono}'`)
-    if (serverData.rfc) console.log("- rfc:", `'${serverData.rfc}'`)
 
     const response = await fetch("/auth/register", {
       method: "POST",
@@ -357,15 +335,18 @@ registerForm?.addEventListener("submit", async (e) => {
     })
 
     const data = await response.json()
-    console.log("DEBUG - Respuesta del servidor:", data)
 
     if (response.ok && data.success) {
-      showSuccess("register-success", "Registro exitoso! Puedes iniciar sesión ahora.")
+      const profileMessage = formData.perfil === 'donante'
+        ? "Registro exitoso como donante! Puedes iniciar sesión ahora."
+        : "Registro exitoso como beneficiario! Puedes iniciar sesión ahora."
+
+      showSuccess("register-success", profileMessage)
 
       // Limpiar formulario
       registerForm.reset()
 
-      // Cambiar al formulario de login después de un delay
+      // Cambiar al formulario de login
       setTimeout(() => {
         container.classList.remove("sign-up-mode")
       }, 2000)
@@ -373,7 +354,6 @@ registerForm?.addEventListener("submit", async (e) => {
       let errorMessage = "Error al registrar usuario"
 
       if (data.errors) {
-        // Si hay errores de validación específicos
         const errors = data.errors
         const firstField = Object.keys(errors)[0]
         const firstError = errors[firstField]
@@ -389,7 +369,6 @@ registerForm?.addEventListener("submit", async (e) => {
         errorMessage = data
       }
 
-      console.log("DEBUG - Error data:", data)
       showError("register-error", errorMessage)
     }
   } catch (error) {
@@ -407,24 +386,9 @@ registerForm?.addEventListener("submit", async (e) => {
   }
 })
 
-// Debug: Verificar valores de los campos en tiempo real
+// Validaciones en tiempo real
 document.addEventListener("DOMContentLoaded", () => {
-  const emailInput = document.getElementById("login-email")
-  const passwordInput = document.getElementById("login-password")
-
-  if (emailInput) {
-    emailInput.addEventListener("input", () => {
-      console.log("Email value:", emailInput.value)
-    })
-  }
-
-  if (passwordInput) {
-    passwordInput.addEventListener("input", () => {
-      console.log("Password length:", passwordInput.value.length)
-    })
-  }
-
-  // Validación en tiempo real para el RFC
+  // RFC: Solo letras y números, máximo 13 caracteres
   const rfcInput = document.getElementById("register-rfc")
   if (rfcInput) {
     rfcInput.addEventListener("input", (e) => {
@@ -436,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  // Validación en tiempo real para teléfono
+  // Teléfono: Solo números, máximo 10 dígitos
   const telefonoInput = document.getElementById("register-telefono")
   if (telefonoInput) {
     telefonoInput.addEventListener("input", (e) => {

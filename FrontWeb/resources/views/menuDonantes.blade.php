@@ -5,14 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menú Donador</title>
-    <link rel="stylesheet" href="css/menus.css">
+    <link rel="stylesheet" href="{{ asset('css/menus.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
 <body>
     <div class="dashboard-container">
         <!-- Botón de cerrar sesión -->
         <div class="logout-container">
-            <form method="POST" action="#" class="logout-form">
+            <form action="/logout" method="POST" class="logout-form">
+                @csrf
                 <button type="submit" class="logout-btn">
                     <svg class="logout-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
@@ -36,7 +38,7 @@
                 <div class="module-card" onclick="window.location.href='{{ route('perfilDonante') }}'">
                     <div class="module-content">
                         <div class="module-icon">
-                            <img src="images/Perfiles.png" alt="Perfil" class="icon-img">
+                            <img src="{{ asset('images/Perfiles.png') }}" alt="Perfil" class="icon-img">
                         </div>
                         <h3>Perfil</h3>
                     </div>
@@ -46,7 +48,7 @@
                 <div class="module-card" onclick="#">
                     <div class="module-content">
                         <div class="module-icon">
-                            <img src="images/Donaciones.png" alt="Donaciones" class="icon-img">
+                            <img src="{{ asset('images/Donaciones.png') }}" alt="Donaciones" class="icon-img">
                         </div>
                         <h3>Donaciones Realizadas</h3>
                     </div>
@@ -56,7 +58,7 @@
                 <div class="module-card" onclick="#">
                     <div class="module-content">
                         <div class="module-icon">
-                            <img src="images/Eventos.png" alt="Eventos" class="icon-img">
+                            <img src="{{ asset('images/Eventos.png') }}" alt="Eventos" class="icon-img">
                         </div>
                         <h3>Eventos</h3>
                     </div>
@@ -66,7 +68,7 @@
                 <div class="module-card" onclick="#">
                     <div class="module-content">
                         <div class="module-icon">
-                            <img src="images/Estatus.png" alt="Solicitudes" class="icon-img">
+                            <img src="{{ asset('images/Estatus.png') }}" alt="Solicitudes" class="icon-img">
                         </div>
                         <h3>Estatus Solicitudes</h3>
                     </div>
@@ -74,6 +76,16 @@
             </div>
         </section>
     </div>
+
+    <!-- Scripts adicionales -->
+    <script>
+        // Confirmación para cerrar sesión
+        document.querySelector('.logout-btn').addEventListener('click', function(e) {
+            if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                e.preventDefault();
+            }
+        });
+    </script>
 </body>
 
 </html>
