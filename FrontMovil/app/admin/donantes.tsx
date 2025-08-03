@@ -27,6 +27,7 @@ interface Donante {
   correo: string
   telefono: string
   rfc?: string
+  edad?: number
   paginaWeb?: string
   estatus_id: number
   rol_id: number
@@ -53,6 +54,7 @@ export default function DonantesScreen() {
     correo: "",
     telefono: "",
     rfc: "",
+    edad: "",
     paginaWeb: "",
     contraseña: "",
     estatus_id: 1,
@@ -121,6 +123,7 @@ export default function DonantesScreen() {
       correo: "",
       telefono: "",
       rfc: "",
+      edad: "",
       paginaWeb: "",
       contraseña: "",
       estatus_id: 1,
@@ -137,6 +140,7 @@ export default function DonantesScreen() {
       correo: donante.correo,
       telefono: donante.telefono,
       rfc: donante.rfc || "",
+      edad: donante.edad ? donante.edad.toString() : "",
       paginaWeb: donante.paginaWeb || "",
       contraseña: "",
       estatus_id: donante.estatus_id,
@@ -164,6 +168,12 @@ export default function DonantesScreen() {
         return
       }
 
+      // Validar edad si se proporciona
+      if (formData.edad && (isNaN(Number(formData.edad)) || Number(formData.edad) < 1 || Number(formData.edad) > 120)) {
+        Alert.alert("Error", "Por favor ingresa una edad válida (1-120)")
+        return
+      }
+
       const url = editingDonante
         ? generateFastApiUrl(`/usuarios/${editingDonante.id}`)
         : generateFastApiUrl("/usuarios/")
@@ -178,6 +188,7 @@ export default function DonantesScreen() {
             correo: formData.correo,
             telefono: formData.telefono,
             rfc: formData.rfc,
+            ...(formData.edad && { edad: Number(formData.edad) }),
             paginaWeb: formData.paginaWeb,
             estatus_id: formData.estatus_id,
             ...(formData.contraseña && { contraseña: formData.contraseña }),
@@ -190,6 +201,7 @@ export default function DonantesScreen() {
             correo: formData.correo,
             telefono: formData.telefono,
             rfc: formData.rfc,
+            ...(formData.edad && { edad: Number(formData.edad) }),
             paginaWeb: formData.paginaWeb,
             contraseña: formData.contraseña,
             rol_id: 2, // Donante
@@ -266,6 +278,7 @@ export default function DonantesScreen() {
         <Text style={styles.donanteEmail}>{item.correo}</Text>
         <Text style={styles.donantePhone}>{item.telefono}</Text>
         {item.rfc && <Text style={styles.donanteRfc}>RFC: {item.rfc}</Text>}
+        {item.edad && <Text style={styles.donanteAge}>Edad: {item.edad} años</Text>}
         {item.paginaWeb && <Text style={styles.donanteWebsite}>{item.paginaWeb}</Text>}
         <View style={styles.statusContainer}>
           <View style={[styles.statusBadge, { backgroundColor: item.estatus_id === 1 ? "#4CAF50" : "#F44336" }]}>
@@ -393,6 +406,18 @@ export default function DonantesScreen() {
                   placeholder="RFC"
                   autoCapitalize="characters"
                   maxLength={13}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Edad</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.edad}
+                  onChangeText={(text) => setFormData({ ...formData, edad: text })}
+                  placeholder="Edad"
+                  keyboardType="numeric"
+                  maxLength={3}
                 />
               </View>
 
@@ -537,6 +562,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   donanteRfc: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  donanteAge: {
     fontSize: 14,
     color: "#666",
     marginBottom: 2,

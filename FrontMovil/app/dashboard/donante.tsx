@@ -44,7 +44,17 @@ export default function DonanteDashboard() {
   }
 
   const handleMenuOption = (option: string) => {
-    Alert.alert("Próximamente", `La función ${option} estará disponible pronto.`)
+    switch (option) {
+      case "Perfil":
+        router.push("/donante/perfil")
+        break
+      case "Donaciones":
+        router.push("/donante/donaciones")
+        break
+      default:
+        Alert.alert("Próximamente", `La función ${option} estará disponible pronto.`)
+        break
+    }
   }
 
   return (
@@ -67,11 +77,11 @@ export default function DonanteDashboard() {
               <Text style={styles.menuText}>Perfil</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Donaciones Realizadas")}>
+            <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Donaciones")}>
               <View style={styles.iconContainer}>
                 <MaterialCommunityIcons name="heart-multiple" size={40} color="#E91E63" />
               </View>
-              <Text style={styles.menuText}>Donaciones{"\n"}Realizadas</Text>
+              <Text style={styles.menuText}>Donaciones</Text>
             </TouchableOpacity>
           </View>
 

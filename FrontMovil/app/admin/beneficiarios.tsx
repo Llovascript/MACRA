@@ -27,6 +27,7 @@ interface Beneficiario {
   correo: string
   telefono: string
   rfc?: string
+  edad?: number
   paginaWeb?: string
   estatus_id: number
   rol_id: number
@@ -53,6 +54,7 @@ export default function BeneficiariosScreen() {
     correo: "",
     telefono: "",
     rfc: "",
+    edad: "",
     paginaWeb: "",
     contraseña: "",
     estatus_id: 1,
@@ -121,6 +123,7 @@ export default function BeneficiariosScreen() {
       correo: "",
       telefono: "",
       rfc: "",
+      edad: "",
       paginaWeb: "",
       contraseña: "",
       estatus_id: 1,
@@ -137,6 +140,7 @@ export default function BeneficiariosScreen() {
       correo: beneficiario.correo,
       telefono: beneficiario.telefono,
       rfc: beneficiario.rfc || "",
+      edad: beneficiario.edad ? beneficiario.edad.toString() : "",
       paginaWeb: beneficiario.paginaWeb || "",
       contraseña: "",
       estatus_id: beneficiario.estatus_id,
@@ -164,6 +168,12 @@ export default function BeneficiariosScreen() {
         return
       }
 
+      // Validar edad si se proporciona
+      if (formData.edad && (isNaN(Number(formData.edad)) || Number(formData.edad) < 1 || Number(formData.edad) > 120)) {
+        Alert.alert("Error", "Por favor ingresa una edad válida (1-120)")
+        return
+      }
+
       const url = editingBeneficiario
         ? generateFastApiUrl(`/usuarios/${editingBeneficiario.id}`)
         : generateFastApiUrl("/usuarios/")
@@ -178,6 +188,7 @@ export default function BeneficiariosScreen() {
             correo: formData.correo,
             telefono: formData.telefono,
             rfc: formData.rfc,
+            ...(formData.edad && { edad: Number(formData.edad) }),
             paginaWeb: formData.paginaWeb,
             estatus_id: formData.estatus_id,
             ...(formData.contraseña && { contraseña: formData.contraseña }),
@@ -190,6 +201,7 @@ export default function BeneficiariosScreen() {
             correo: formData.correo,
             telefono: formData.telefono,
             rfc: formData.rfc,
+            ...(formData.edad && { edad: Number(formData.edad) }),
             paginaWeb: formData.paginaWeb,
             contraseña: formData.contraseña,
             rol_id: 3, // Beneficiario
@@ -266,6 +278,7 @@ export default function BeneficiariosScreen() {
         <Text style={styles.beneficiarioEmail}>{item.correo}</Text>
         <Text style={styles.beneficiarioPhone}>{item.telefono}</Text>
         {item.rfc && <Text style={styles.beneficiarioRfc}>RFC: {item.rfc}</Text>}
+        {item.edad && <Text style={styles.beneficiarioAge}>Edad: {item.edad} años</Text>}
         {item.paginaWeb && <Text style={styles.beneficiarioWebsite}>{item.paginaWeb}</Text>}
         <View style={styles.statusContainer}>
           <View style={[styles.statusBadge, { backgroundColor: item.estatus_id === 1 ? "#4CAF50" : "#F44336" }]}>
@@ -395,6 +408,18 @@ export default function BeneficiariosScreen() {
                   placeholder="RFC"
                   autoCapitalize="characters"
                   maxLength={13}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Edad</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.edad}
+                  onChangeText={(text) => setFormData({ ...formData, edad: text })}
+                  placeholder="Edad"
+                  keyboardType="numeric"
+                  maxLength={3}
                 />
               </View>
 
@@ -539,6 +564,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   beneficiarioRfc: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  beneficiarioAge: {
     fontSize: 14,
     color: "#666",
     marginBottom: 2,
