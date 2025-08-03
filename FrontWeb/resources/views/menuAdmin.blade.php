@@ -57,7 +57,7 @@
                 </div>
 
                 <!-- Módulo Donantes -->
-                <div class="module-card" onclick="window.location.href='/donantes'">
+                <div class="module-card" onclick="window.location.href='{{ route('adminDonantes') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="{{ asset('images/Donantes.png') }}" alt="Donantes" class="icon-img">
@@ -67,7 +67,7 @@
                 </div>
 
                 <!-- Módulo Beneficiarios -->
-                <div class="module-card" onclick="window.location.href='/beneficiarios'">
+                <div class="module-card" onclick="window.location.href='{{ route('adminBeneficiarios') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="{{ asset('images/Beneficiarios.png') }}" alt="Beneficiarios" class="icon-img">
@@ -80,7 +80,6 @@
         </div>
     </div>
 
-    <!-- Scripts adicionales si los necesitas -->
     <script>
         // Confirmación para cerrar sesión
         document.querySelector('.logout-btn').addEventListener('click', function(e) {

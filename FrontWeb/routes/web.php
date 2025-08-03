@@ -28,12 +28,46 @@ Route::middleware(['auth.check'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
 });
 
-// Rutas de Administrador - SOLO ADMINS (rol_id = 1)
+// Rutas de Administrador
 Route::middleware(['auth.check:admin'])->group(function () {
     Route::get('/menuAdmin', [UserController::class, 'menuAdmin'])->name('admin.menu');
     Route::get('/adminSolicitudes', function () {
         return view('adminSolicitudes');
     })->name('adminSolicitudes');
+    
+    // Rutas de admin donantes
+    Route::get('/adminDonantes', function () {
+        return view('adminDonantes');
+    })->name('adminDonantes');
+    
+    Route::get('/agregarDonante', function () {
+        return view('agregarDonante');
+    })->name('agregarDonante');
+    
+    Route::get('/actualizarDonante', function () {
+        return view('actualizarDonante');
+    })->name('actualizarDonante');
+    
+    Route::get('/eliminarDonante', function () {
+        return view('eliminarDonante');
+    })->name('eliminarDonante');
+    
+    // Rutas de admin beneficiarios
+    Route::get('/adminBeneficiarios', function () {
+        return view('adminBeneficiarios');
+    })->name('adminBeneficiarios');
+    
+    Route::get('/agregarBeneficiario', function () {
+        return view('agregarBeneficiario');
+    })->name('agregarBeneficiario');
+    
+    Route::get('/actualizarBeneficiario', function () {
+        return view('actualizarBeneficiario');
+    })->name('actualizarBeneficiario');
+    
+    Route::get('/eliminarBeneficiario', function () {
+        return view('eliminarBeneficiario');
+    })->name('eliminarBeneficiario');
     
     Route::get('/solicitudesPerfiles', [SolicitudesPerfilesController::class, 'index'])
         ->name('solicitudesPerfiles');
