@@ -42,33 +42,16 @@ Route::get('/logout', [UserController::class, 'logoutGet'])->name('logout.get');
 
 Route::middleware(['auth.check'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
-    
-    // Ruta de redirección automática por rol
-    Route::get('/redirect-by-role', function () {
-        $user = Session::get('user');
-        $roleId = $user['rol_id'] ?? null;
-        
-        switch ($roleId) {
-            case 1:
-                return redirect()->route('admin.menu');
-            case 2:
-                return redirect()->route('donante.menu');
-            case 3:
-                return redirect()->route('beneficiario.menu');
-            default:
-                return redirect()->route('dashboard');
-        }
-    })->name('redirect.by.role');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Rutas de Administrador (rol_id = 1)
+| Rutas de Administrador (rol_id = 1) - MOVIDO ARRIBA PARA EVITAR CONFLICTOS
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth.check:admin'])->group(function () {
-    // Menu principal de admin
+    // Menu principal de admin - SIN CONFLICTOS
     Route::get('/menuAdmin', [UserController::class, 'menuAdmin'])->name('admin.menu');
     Route::get('/adminSolicitudes', function () {
         return view('adminSolicitudes');
@@ -206,4 +189,29 @@ Route::middleware(['auth.check:admin'])->prefix('admin')->group(function () {
     Route::post('/donaciones/{donacionId}/aprobar', [SolicitudesDonacionesController::class, 'aprobar'])->name('donaciones.aprobar');
     Route::post('/donaciones/{donacionId}/rechazar', [SolicitudesDonacionesController::class, 'rechazar'])->name('donaciones.rechazar');
     Route::get('/donaciones/estadisticas', [SolicitudesDonacionesController::class, 'estadisticas'])->name('donaciones.estadisticas');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Ruta de redirección automática por rol - MOVIDO AL FINAL
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth.check'])->group(function () {
+    // Ruta de redirección automática por rol
+    Route::get('/redirect-by-role', function () {
+        $user = Session::get('user');
+        $roleId = $user['rol_id'] ?? null;
+        
+        switch ($roleId) {
+            case 1:
+                return redirect()->route('admin.menu');
+            case 2:
+                return redirect()->route('donante.menu');
+            case 3:
+                return redirect()->route('beneficiario.menu');
+            default:
+                return redirect()->route('dashboard');
+        }
+    })->name('redirect.by.role');
 });
