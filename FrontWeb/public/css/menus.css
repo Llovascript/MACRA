@@ -356,3 +356,35 @@ body {
 .logout-btn:active {
     transform: translateY(-1px) scale(0.98);
 }
+
+/* Grid de módulos - Donador con 3 módulos */
+.modules-grid.donador-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    max-width: 1050px;
+    width: 100%;
+}
+
+/* Responsive para donador con 3 módulos */
+@media (max-width: 1200px) {
+    .modules-grid.donador-3 {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+        max-width: 900px;
+    }
+}
+
+@media (max-width: 768px) {
+    .modules-grid.donador-3 {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        max-width: 400px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modules-grid.donador-3 {
+        max-width: 300px;
+    }
+}

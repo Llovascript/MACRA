@@ -33,7 +33,7 @@
                 <h1>¡Bienvenido Donador!</h1>
             </div>
 
-            <div class="modules-grid donador">
+            <div class="modules-grid donador-3">
                 <!-- Módulo Perfil -->
                 <div class="module-card" onclick="window.location.href='{{ route('perfilDonante') }}'">
                     <div class="module-content">
@@ -45,32 +45,22 @@
                 </div>
 
                 <!-- Módulo Donaciones Realizadas -->
-                <div class="module-card" onclick="#">
+                <div class="module-card" onclick="window.location.href='{{ route('donaciones.historial') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="{{ asset('images/Donaciones.png') }}" alt="Donaciones" class="icon-img">
                         </div>
-                        <h3>Donaciones Realizadas</h3>
+                        <h3>Historial de Donaciones</h3>
                     </div>
                 </div>
 
                 <!-- Módulo Eventos -->
-                <div class="module-card" onclick="#">
+                <div class="module-card" onclick="window.location.href=#">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="{{ asset('images/Eventos.png') }}" alt="Eventos" class="icon-img">
                         </div>
                         <h3>Eventos</h3>
-                    </div>
-                </div>
-
-                <!-- Módulo Estatus Solicitudes -->
-                <div class="module-card" onclick="#">
-                    <div class="module-content">
-                        <div class="module-icon">
-                            <img src="{{ asset('images/Estatus.png') }}" alt="Solicitudes" class="icon-img">
-                        </div>
-                        <h3>Estatus Solicitudes</h3>
                     </div>
                 </div>
             </div>
