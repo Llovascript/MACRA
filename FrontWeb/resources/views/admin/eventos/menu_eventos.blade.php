@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -25,18 +26,53 @@
             background: var(--primary);
             color: white;
             padding: 1.2rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-2px);
+        }
+
+        .back-icon {
+            width: 20px;
+            height: 20px;
         }
 
         .admin-title {
             font-weight: 600;
             letter-spacing: 0.5px;
             margin-bottom: 0.3rem;
+            flex: 1;
+            text-align: center;
+            margin-right: 47px;
+            /* Compensar el ancho del botón para centrar */
         }
 
         .admin-url {
             font-size: 0.75rem;
-            color: rgba(255,255,255,0.8);
+            color: rgba(255, 255, 255, 0.8);
             font-family: monospace;
         }
 
@@ -48,7 +84,7 @@
         .card-panel {
             border: none;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             background: white;
             padding: 2rem;
             max-width: 500px;
@@ -91,7 +127,8 @@
         }
 
         .btn-capacity {
-            background: #28527a; /* un azul para diferenciar */
+            background: #28527a;
+            /* un azul para diferenciar */
             color: white;
         }
 
@@ -133,10 +170,19 @@
         }
     </style>
 </head>
+
 <body>
+    <!-- Header con botón de regreso -->
     <header class="admin-header">
         <div class="container">
-            <div class="text-center">
+            <div class="header-content">
+                <button class="back-btn" onclick="window.location.href='{{ route('admin.menu') }}'">
+                    <svg class="back-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                </button>
                 <h1 class="admin-title">Administración de Eventos</h1>
             </div>
         </div>
@@ -189,4 +235,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

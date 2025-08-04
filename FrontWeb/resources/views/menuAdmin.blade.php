@@ -47,7 +47,8 @@
                 </div>
 
                 <!-- Módulo Eventos -->
-                <div class="module-card" onclick="window.location.href='/eventos'">
+                <div class="module-card" onclick="window.location.href='{{ route('admin.eventos.capacidad') }}'">
+
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="{{ asset('images/Eventos.png') }}" alt="Eventos" class="icon-img">

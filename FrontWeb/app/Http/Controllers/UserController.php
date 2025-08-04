@@ -155,7 +155,7 @@ class UserController extends Controller
                 'correo' => 'required|email|max:255',
                 'contraseña' => 'required|min:6',
                 'confirmar_contraseña' => 'required|same:contraseña',
-                'tipo_entidad' => 'required|in:persona,organizacion',
+                'tipo_entidad' => 'required|in:individual,organizacion,persona',
                 'perfil' => 'required|in:donante,beneficiario',
                 
                 // Campos opcionales
@@ -185,61 +185,18 @@ class UserController extends Controller
                 ], 400);
             }
 
-            // Mapear el perfil seleccionado al rol_id correspondiente
-            $rolId = $this->mapPerfilToRolId($request->perfil);
-
             // Preparar datos para enviar a FastAPI
             $registrationData = [
-                // Campos obligatorios mapeados a la estructura de BD
                 'nombre' => $request->nombre,
                 'aP' => $request->apellido_paterno,
+                'aM' => $request->apellido_materno,
                 'correo' => $request->correo,
                 'contraseña' => $request->contraseña,
                 'tipo' => $request->tipo_entidad,
-                'rol_id' => $rolId,
+                'rol_id' => $this->mapPerfilToRolId($request->perfil),
                 'estatus_id' => 1,
                 'aprobacion' => 1,
                 'del' => 0,
-                
-                // Campos opcionales
-                'aM' => $request->apellido_materno,
-                'paginaWeb' => $request->pagina_web,
-                'edad' => $request->edad ? (int)$request->edad : null,
-                'telefono' => $request->telefono,
-                'rfc' => $request->rfc ? strtoupper($request->rfc) : null,
-                'fundacion' => null,
-                'direccion_id' => null
-            ];
-
-            // Remover campos nulos excepto los permitidos
-            $filteredData = [];
-            foreach ($registrationData as $key => $value) {
-                if ($value !== null && $value !== '') {
-                    $filteredData[$key] = $value;
-                } elseif (in_array($key, ['aM', 'paginaWeb', 'edad', 'telefono', 'rfc', 'fundacion', 'direccion_id'])) {
-                    $filteredData[$key] = $value;
-                }
-            }
-
-<<<<<<< HEAD
-            // Mapear el perfil seleccionado al rol_id correspondiente
-            $rolId = $this->mapPerfilToRolId($request->perfil);
-
-            // Preparar datos para enviar a FastAPI
-            $registrationData = [
-                // Campos obligatorios mapeados a la estructura de BD
-                'nombre' => $request->nombre,
-                'aP' => $request->apellido_paterno,
-                'correo' => $request->correo,
-                'contraseña' => $request->contraseña,
-                'tipo' => $request->tipo_entidad,
-                'rol_id' => $rolId,
-                'estatus_id' => 1,
-                'aprobacion' => 1,
-                'del' => 0,
-                
-                // Campos opcionales
-                'aM' => $request->apellido_materno,
                 'paginaWeb' => $request->pagina_web,
                 'edad' => $request->edad ? (int)$request->edad : null,
                 'telefono' => $request->telefono,
@@ -264,17 +221,7 @@ class UserController extends Controller
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
                 ])
-<<<<<<< HEAD
                 ->post($this->apiBaseUrl . '/auth/register', $filteredData);
-=======
-                ->post($this->apiBaseUrl . '/auth/register', [
-                    'nombre' => $request->nombre,
-                    'correo' => $request->correo,
-                    'contraseña' => $request->contraseña,
-                    'rol_id' => $request->rol_id,
-                    'estatus_id' => 1 // Valor por defecto
-                ]);
->>>>>>> corpusio
 
             if ($response->successful()) {
                 $responseData = $response->json();
@@ -363,20 +310,10 @@ class UserController extends Controller
 
     public function logout(Request $request)
     {
-<<<<<<< HEAD
-        try {
-            Session::forget(['access_token', 'token_type', 'user']);
-            Session::flush();
-            
-            Log::info('Usuario cerró sesión exitosamente');
-            
-            return redirect()->route('login.register')->with('success', 'Sesión cerrada exitosamente');
-            
-        } catch (\Exception $e) {
-            Log::error('Error al cerrar sesión', ['error' => $e->getMessage()]);
-            Session::flush();
-            return redirect()->route('login.register')->with('warning', 'Sesión cerrada');
-        }
+        Session::forget(['access_token', 'token_type', 'user']);
+        Session::flush();
+        
+        return redirect()->route('login')->with('message', 'Sesión cerrada exitosamente');
     }
 
     /**
@@ -390,14 +327,6 @@ class UserController extends Controller
     /**
      * Mostrar dashboard genérico
      */
-=======
-        Session::forget(['access_token', 'token_type', 'user']);
-        Session::flush();
-        
-        return redirect()->route('login')->with('message', 'Sesión cerrada exitosamente');
-    }
-
->>>>>>> corpusio
     public function dashboard()
     {
         if (!Session::has('access_token')) {

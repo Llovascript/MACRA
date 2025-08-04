@@ -46,7 +46,7 @@
                 </div>
 
                 <!-- Módulo Eventos -->
-                <div class="module-card" onclick="#">
+                <div class="module-card" onclick="window.location.href='{{ route('admin.eventos.menu') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="images/Eventos.png" alt="Eventos" class="icon-img">
