@@ -29,16 +29,24 @@ Route::middleware(['auth.check'])->group(function () {
         Route::get('/{id}/editar', [EventoController::class, 'edit'])->name('admin.eventos.edit');
         Route::post('/{id}/actualizar', [EventoController::class, 'update'])->name('admin.eventos.update');
 
-        // Ruta corregida para capacidad sin repetir prefijo
         Route::get('/capacidad', [EventoController::class, 'capacidad'])->name('admin.eventos.capacidad');
     });
 
-    // ✅ Rutas para beneficiarios (fuera del prefijo de admin)
+    // Rutas para beneficiarios
     Route::get('/eventos/usuario', [EventoController::class, 'verEventosDisponibles'])->name('eventos.usuario');
     Route::post('/eventos/unirse/{id}', [EventoController::class, 'unirseEvento'])->name('eventos.unirse');
 
-    // Historial de donaciones (solo para donantes)
-    Route::get('/donaciones/historial', [DonacionController::class, 'historial'])->name('donaciones.historial');
+    // ✅ Sistema completo de donaciones
+    Route::prefix('donaciones')->group(function () {
+        // Vista para crear nueva donación
+        Route::get('/crear', [DonacionController::class, 'crear'])->name('donaciones.crear');
+        
+        // Procesar formulario de donación
+        Route::post('/guardar', [DonacionController::class, 'guardar'])->name('donaciones.guardar');
+        
+        // Historial de donaciones
+        Route::get('/historial', [DonacionController::class, 'historial'])->name('donaciones.historial');
+    });
 });
 
 // Ruta para logout
