@@ -47,7 +47,7 @@
                 </div>
 
                 <!-- Módulo Eventos -->
-                <div class="module-card" onclick="window.location.href='/eventos-beneficiario'">
+                <div class="module-card" onclick="window.location.href='{{ route('eventos.usuario') }}'">
                     <div class="module-content">
                         <div class="module-icon">
                             <img src="{{ asset('images/Eventos.png') }}" alt="Eventos" class="icon-img">
