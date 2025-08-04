@@ -1,0 +1,599 @@
+/* Reset y configuración base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 100%;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    margin-bottom: 40px;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    position: absolute;
+    left: 0;
+}
+
+.back-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #333;
+    text-align: center;
+    width: 100%;
+    margin: 20px 0 40px 0;
+}
+
+/* Sección del formulario */
+.form-section {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Sección de búsqueda */
+.search-section {
+    max-width: 800px;
+    margin: 0 auto 30px auto;
+}
+
+.search-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 15px 60px 15px 20px;
+    border: none;
+    border-radius: 25px;
+    background-color: #e5e7eb;
+    font-size: 16px;
+    color: #374151;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    background-color: #d1d5db;
+}
+
+.search-input::placeholder {
+    color: #9ca3af;
+}
+
+.search-btn {
+    position: absolute;
+    right: 5px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-btn:hover {
+    background: #2563eb;
+    transform: scale(1.05);
+}
+
+.search-btn i {
+    font-size: 16px;
+}
+
+/* Formulario */
+.donante-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Filas del formulario */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* Grupos de input */
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Wrapper de inputs */
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Iconos de inputs */
+.input-icon {
+    position: absolute;
+    left: 15px;
+    width: 20px;
+    height: 20px;
+    color: #9ca3af;
+    z-index: 2;
+}
+
+/* Inputs */
+.form-input {
+    width: 100%;
+    padding: 15px 15px 15px 50px;
+    border: none;
+    border-radius: 25px;
+    background-color: #e5e7eb;
+    font-size: 16px;
+    color: #374151;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    background-color: #d1d5db;
+}
+
+.form-input::placeholder {
+    color: #9ca3af;
+}
+
+/* Wrapper de selects */
+.select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Selects */
+.form-select {
+    width: 100%;
+    padding: 15px 50px 15px 20px;
+    border: none;
+    border-radius: 25px;
+    background-color: #e5e7eb;
+    font-size: 16px;
+    color: #9ca3af;
+    cursor: pointer;
+    appearance: none;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus {
+    outline: none;
+    background-color: #d1d5db;
+}
+
+.form-select option {
+    color: #374151;
+    background-color: white;
+}
+
+/* Icono de select */
+.select-icon {
+    position: absolute;
+    right: 15px;
+    width: 20px;
+    height: 20px;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+/* Acciones del formulario */
+.form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+/* Botón de envío */
+.submit-btn {
+    background: #22c55e;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 40px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+    background: #16a34a;
+}
+
+/* Botón de actualizar */
+.update-btn {
+    background: #f59e0b;
+}
+
+.update-btn:hover {
+    background: #d97706;
+}
+
+/* Botón de eliminar */
+.delete-btn {
+    background: #ef4444;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+/* Campos readonly */
+.form-input[readonly],
+.form-select[disabled] {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.form-input[readonly]:hover,
+.form-select[disabled]:hover {
+    background-color: #f3f4f6;
+}
+
+/* Campos bloqueados específicos */
+.blocked-input {
+    background-color: #f9fafb !important;
+    color: #6b7280 !important;
+    cursor: not-allowed !important;
+    border: 1px solid #e5e7eb;
+}
+
+.blocked-input:hover,
+.blocked-input:focus {
+    background-color: #f9fafb !important;
+}
+
+.blocked-select {
+    background-color: #f9fafb !important;
+    color: #6b7280 !important;
+    cursor: not-allowed !important;
+    border: 1px solid #e5e7eb;
+}
+
+.blocked-select:hover,
+.blocked-select:focus {
+    background-color: #f9fafb !important;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    max-width: 400px;
+    width: 90%;
+    animation: slideIn 0.3s ease;
+}
+
+.modal-header {
+    padding: 20px 24px 0;
+    border-bottom: none;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+}
+
+.modal-body {
+    padding: 20px 24px;
+    text-align: center;
+}
+
+.modal-body p {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.modal-body p:last-child {
+    margin-bottom: 0;
+    font-weight: 600;
+    color: #ef4444;
+}
+
+.modal-footer {
+    padding: 0 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Botones del modal */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 100px;
+}
+
+.btn-cancel {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.btn-cancel:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.btn-confirm {
+    color: #ffffff;
+}
+
+.btn-confirm.delete {
+    background-color: #ef4444;
+}
+
+.btn-confirm.delete:hover {
+    background-color: #dc2626;
+}
+
+/* Animaciones del modal */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .title {
+        font-size: 24px;
+        margin-left: 40px;
+        text-align: left;
+    }
+
+    .header {
+        margin-bottom: 30px;
+    }
+
+    .search-section {
+        margin-bottom: 20px;
+    }
+    
+    .search-wrapper {
+        max-width: 100%;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    
+    .modal-header h3 {
+        font-size: 18px;
+    }
+    
+    .modal-body p {
+        font-size: 15px;
+    }
+    
+    .btn {
+        min-width: 80px;
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .search-input {
+        padding: 12px 55px 12px 15px;
+        font-size: 16px;
+    }
+    
+    .search-btn {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .search-btn i {
+        font-size: 14px;
+    }
+    
+    .search-input {
+        padding: 10px 50px 10px 12px;
+    }
+    
+    .search-btn {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .search-btn i {
+        font-size: 13px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .form-input,
+    .form-select {
+        padding: 12px 12px 12px 45px;
+        font-size: 16px;
+    }
+    
+    .form-select {
+        padding: 12px 45px 12px 15px;
+    }
+    
+    .input-icon,
+    .select-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .input-icon {
+        left: 12px;
+    }
+    
+    .select-icon {
+        right: 12px;
+    }
+    
+    .submit-btn {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+
+    .title {
+        font-size: 22px;
+    }
+    
+    .form-row {
+        gap: 12px;
+    }
+    
+    .form-input,
+    .form-select {
+        padding: 10px 10px 10px 40px;
+    }
+    
+    .form-select {
+        padding: 10px 40px 10px 12px;
+    }
+    
+    .input-icon {
+        left: 10px;
+        width: 16px;
+        height: 16px;
+    }
+    
+    .select-icon {
+        right: 10px;
+        width: 16px;
+        height: 16px;
+    }
+}
+
+/* Focus visible para accesibilidad */
+.back-btn:focus-visible,
+.submit-btn:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Animaciones suaves */
+.back-btn,
+.submit-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Efectos adicionales */
+.back-btn:active {
+    transform: scale(0.95);
+}
+
+.submit-btn:active {
+    transform: scale(0.98);
+}
+
+/* Hover effects */
+.input-wrapper:hover .form-input {
+    background-color: #d1d5db;
+}
+
+.select-wrapper:hover .form-select {
+    background-color: #d1d5db;
+}
