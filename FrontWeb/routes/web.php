@@ -3,7 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\EventoController;
+use App\Http\Controllers\DonacionController;
+// Rutas públicas: login y registro
 use App\Http\Controllers\BeneficiarioPerfilController;
+
 use App\Http\Controllers\PerfilDonanteController;
 use App\Http\Controllers\UserDatabaseController;
 use App\Http\Controllers\SolicitudesPerfilesController;
@@ -15,9 +19,10 @@ use App\Http\Controllers\AdminBeneficiariosController; // NUEVO
 // Rutas principales
 Route::get('/index', [UserController::class, 'showIndex'])->name('index');
 Route::get('/', [UserController::class, 'showLoginRegister'])->name('home');
-Route::get('/login', [UserController::class, 'showLoginRegister'])->name('login.register');
+Route::get('/login', [UserController::class, 'showLoginRegister'])->name('login');
+Route::get('/login/register', [UserController::class, 'showLoginRegister'])->name('login.register');
 
-// Rutas de autenticación
+// Rutas API para autenticación (JavaScript)
 Route::post('/auth/login', [UserController::class, 'login'])->name('api.login');
 Route::post('/auth/register', [UserController::class, 'register'])->name('api.register');
 
@@ -25,7 +30,7 @@ Route::post('/auth/register', [UserController::class, 'register'])->name('api.re
 Route::post('/logout', [UserController::class, 'logout'])->name('logout');
 Route::get('/logout', [UserController::class, 'logoutGet'])->name('logout.get');
 
-// Rutas protegidas - Dashboard genérico
+// Rutas protegidas - Dashboard genérico con middleware auth.check
 Route::middleware(['auth.check'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
 });

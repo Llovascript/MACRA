@@ -8,16 +8,17 @@ from dependencies import require_role, get_current_active_user
 
 router = APIRouter(prefix="/eventos", tags=["eventos"])
 
+
 @router.post("/", response_model=EventoResponse)
 def create_evento(
-    evento: EventoCreate, 
+    evento: EventoCreate,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_role(["admin"]))
 ):
     estatus = db.query(EstatusG).filter(EstatusG.id == evento.estatus_id).first()
     if not estatus:
         raise HTTPException(status_code=404, detail="Estatus no válido")
-    
+
     db_evento = Evento(**evento.dict())
     db.add(db_evento)
     try:
@@ -28,19 +29,21 @@ def create_evento(
         db.rollback()
         raise HTTPException(status_code=400, detail="Error creando evento")
 
+
 @router.get("/", response_model=List[EventoResponse])
 def get_eventos(
-    skip: int = 0, 
-    limit: int = 100, 
+    skip: int = 0,
+    limit: int = 100,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
 ):
     return db.query(Evento).filter(Evento.del_flag == False).offset(skip).limit(limit).all()
 
+
 @router.put("/{evento_id}", response_model=EventoResponse)
 def update_evento(
-    evento_id: int, 
-    evento_update: EventoCreate, 
+    evento_id: int,
+    evento_update: EventoCreate,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_role(["admin"]))
 ):
@@ -48,14 +51,14 @@ def update_evento(
         Evento.id == evento_id,
         Evento.del_flag == False
     ).first()
-    
+
     if not evento:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
-    
+
     update_data = evento_update.dict(exclude_unset=True)
     for field, value in update_data.items():
         setattr(evento, field, value)
-    
+
     try:
         db.commit()
         db.refresh(evento)
@@ -63,6 +66,30 @@ def update_evento(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error actualizando evento")
+
+
+@router.delete("/{evento_id}")
+def delete_evento(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["admin", "moderador"]))
+):
+    evento = db.query(Evento).filter(
+        Evento.id == evento_id,
+        Evento.del_flag == False
+    ).first()
+
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento no encontrado")
+
+    try:
+        evento.del_flag = True
+        db.commit()
+        return {"message": "Evento eliminado correctamente"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Error al eliminar el evento")
+
 
 @router.post("/{evento_id}/beneficiarios/{beneficiario_id}")
 def add_beneficiario(
@@ -85,20 +112,20 @@ def add_beneficiario(
     ).first()
     if not beneficiario:
         raise HTTPException(status_code=404, detail="Beneficiario no válido")
-    
+
     existing = db.query(BeneficiarioEvento).filter(
         BeneficiarioEvento.evento_id == evento_id,
         BeneficiarioEvento.beneficiario_id == beneficiario_id
     ).first()
-    
+
     if existing:
         raise HTTPException(status_code=400, detail="El beneficiario ya está asignado a este evento")
-    
+
     db_relation = BeneficiarioEvento(
         evento_id=evento_id,
         beneficiario_id=beneficiario_id
     )
-    
+
     db.add(db_relation)
     try:
         db.commit()
@@ -106,6 +133,7 @@ def add_beneficiario(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error añadiendo beneficiario")
+
 
 @router.delete("/{evento_id}/beneficiarios/{beneficiario_id}")
 def remove_beneficiario(
@@ -118,10 +146,10 @@ def remove_beneficiario(
         BeneficiarioEvento.evento_id == evento_id,
         BeneficiarioEvento.beneficiario_id == beneficiario_id
     ).first()
-    
+
     if not relation:
         raise HTTPException(status_code=404, detail="Relación no encontrada")
-    
+
     db.delete(relation)
     try:
         db.commit()
@@ -129,6 +157,7 @@ def remove_beneficiario(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error removiendo beneficiario")
+
 
 @router.delete("/{evento_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_evento(
@@ -140,10 +169,10 @@ def delete_evento(
         Evento.id == evento_id,
         Evento.del_flag == False
     ).first()
-    
+
     if not evento:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
-    
+
     evento.del_flag = True
     try:
         db.commit()
@@ -151,6 +180,7 @@ def delete_evento(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error eliminando evento")
+
 
 @router.post("/{evento_id}/unirse_como_donante", response_model=DonanteEventoResponse)
 def join_event_as_donante(
@@ -179,6 +209,7 @@ def join_event_as_donante(
         db.rollback()
         raise HTTPException(status_code=400, detail="Error al unirse al evento como donante")
 
+
 @router.post("/{evento_id}/unirse_como_beneficiario", response_model=BeneficiarioEventoResponse)
 def join_event_as_beneficiario(
     evento_id: int,
@@ -205,3 +236,35 @@ def join_event_as_beneficiario(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Error al unirse al evento como beneficiario")
+
+
+# 🔥 NUEVO ENDPOINT: /eventos/capacidad
+@router.get("/capacidad", tags=["eventos"])
+def get_capacidad_eventos(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["admin"]))
+):
+    """
+    Devuelve una lista de eventos con la cantidad de beneficiarios y donantes registrados en cada uno.
+    Solo accesible para usuarios con rol 'admin'.
+    """
+    eventos = db.query(Evento).filter(Evento.del_flag == False).all()
+    resultado = []
+
+    for evento in eventos:
+        beneficiarios_count = db.query(BeneficiarioEvento).filter(
+            BeneficiarioEvento.evento_id == evento.id
+        ).count()
+
+        donantes_count = db.query(DonanteEvento).filter(
+            DonanteEvento.evento_id == evento.id
+        ).count()
+
+        resultado.append({
+            "evento_id": evento.id,
+            "nombre_evento": evento.nombre,
+            "beneficiarios": beneficiarios_count,
+            "donantes": donantes_count
+        })
+
+    return resultado

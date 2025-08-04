@@ -22,14 +22,13 @@ class UserController extends Controller
     }
 
     /**
-     * Procesar login del usuario con redirección por roles
+     * Procesar login del usuario
      */
     public function login(Request $request)
     {
         try {
             Log::info('Intento de login', ['correo' => $request->correo]);
 
-            // Validar datos de entrada
             $validator = Validator::make($request->all(), [
                 'correo' => 'required|email',
                 'contraseña' => 'required|min:6',
@@ -54,14 +53,17 @@ class UserController extends Controller
                     'contraseña' => $request->contraseña
                 ]);
 
+            Log::info('Respuesta de API', [
+                'status' => $response->status(),
+                'successful' => $response->successful()
+            ]);
+
             if ($response->successful()) {
                 $data = $response->json();
                 
-                // Guardar token en sesión
                 Session::put('access_token', $data['access_token']);
                 Session::put('token_type', $data['token_type']);
                 
-                // Obtener información del usuario
                 $userInfo = $this->getUserInfo($data['access_token']);
                 
                 if ($userInfo) {
@@ -146,7 +148,6 @@ class UserController extends Controller
                 'perfil_seleccionado' => $request->perfil
             ]);
 
-            // Validar datos de entrada
             $validator = Validator::make($request->all(), [
                 // Campos obligatorios
                 'nombre' => 'required|string|max:255',
@@ -220,13 +221,60 @@ class UserController extends Controller
                 }
             }
 
+<<<<<<< HEAD
+            // Mapear el perfil seleccionado al rol_id correspondiente
+            $rolId = $this->mapPerfilToRolId($request->perfil);
+
+            // Preparar datos para enviar a FastAPI
+            $registrationData = [
+                // Campos obligatorios mapeados a la estructura de BD
+                'nombre' => $request->nombre,
+                'aP' => $request->apellido_paterno,
+                'correo' => $request->correo,
+                'contraseña' => $request->contraseña,
+                'tipo' => $request->tipo_entidad,
+                'rol_id' => $rolId,
+                'estatus_id' => 1,
+                'aprobacion' => 1,
+                'del' => 0,
+                
+                // Campos opcionales
+                'aM' => $request->apellido_materno,
+                'paginaWeb' => $request->pagina_web,
+                'edad' => $request->edad ? (int)$request->edad : null,
+                'telefono' => $request->telefono,
+                'rfc' => $request->rfc ? strtoupper($request->rfc) : null,
+                'fundacion' => null,
+                'direccion_id' => null
+            ];
+
+            // Remover campos nulos excepto los permitidos
+            $filteredData = [];
+            foreach ($registrationData as $key => $value) {
+                if ($value !== null && $value !== '') {
+                    $filteredData[$key] = $value;
+                } elseif (in_array($key, ['aM', 'paginaWeb', 'edad', 'telefono', 'rfc', 'fundacion', 'direccion_id'])) {
+                    $filteredData[$key] = $value;
+                }
+            }
+
             // Hacer petición a la API FastAPI
             $response = Http::timeout(30)
                 ->withHeaders([
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
                 ])
+<<<<<<< HEAD
                 ->post($this->apiBaseUrl . '/auth/register', $filteredData);
+=======
+                ->post($this->apiBaseUrl . '/auth/register', [
+                    'nombre' => $request->nombre,
+                    'correo' => $request->correo,
+                    'contraseña' => $request->contraseña,
+                    'rol_id' => $request->rol_id,
+                    'estatus_id' => 1 // Valor por defecto
+                ]);
+>>>>>>> corpusio
 
             if ($response->successful()) {
                 $responseData = $response->json();
@@ -296,9 +344,6 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Obtener información del usuario autenticado
-     */
     private function getUserInfo($accessToken)
     {
         try {
@@ -316,11 +361,9 @@ class UserController extends Controller
         return null;
     }
 
-    /**
-     * Cerrar sesión del usuario
-     */
     public function logout(Request $request)
     {
+<<<<<<< HEAD
         try {
             Session::forget(['access_token', 'token_type', 'user']);
             Session::flush();
@@ -347,10 +390,18 @@ class UserController extends Controller
     /**
      * Mostrar dashboard genérico
      */
+=======
+        Session::forget(['access_token', 'token_type', 'user']);
+        Session::flush();
+        
+        return redirect()->route('login')->with('message', 'Sesión cerrada exitosamente');
+    }
+
+>>>>>>> corpusio
     public function dashboard()
     {
         if (!Session::has('access_token')) {
-            return redirect()->route('login.register');
+            return redirect()->route('login');
         }
 
         $user = Session::get('user');
