@@ -134,7 +134,7 @@ class EventoController extends Controller
         return back()->withErrors(['error' => 'Error actualizando evento.'])->withInput();
     }
 
-    // Mostrar eventos disponibles para usuarios beneficiarios
+    // Mostrar eventos disponibles para usuarios beneficiarios (marcando eventos ya unidos)
     public function verEventosDisponibles()
     {
         $token = Session::get('access_token');
@@ -146,7 +146,23 @@ class EventoController extends Controller
             $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos");
             $eventos = $response->json();
 
-            return view('usuario.eventos_disponibles', compact('eventos'));
+            $eventosUnidos = [];
+
+            // Verificar si el usuario ya está unido a cada evento como beneficiario (chequear 409)
+            foreach ($eventos as $evento) {
+                $check = Http::withToken($token)->post("{$this->apiBaseUrl}/eventos/{$evento['id']}/unirse_como_beneficiario");
+
+                if ($check->status() === 409) {
+                    $eventosUnidos[$evento['id']] = true;
+                }
+            }
+
+            foreach ($eventos as &$evento) {
+                $evento['ya_unido'] = $eventosUnidos[$evento['id']] ?? false;
+            }
+
+            return view('usuario.eventos_disponibles', ['eventos' => $eventos]);
+
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'No se pudieron cargar los eventos.']);
         }
@@ -167,6 +183,12 @@ class EventoController extends Controller
                 return redirect()->route('eventos.usuario')->with('success', 'Te uniste correctamente al evento.');
             } else {
                 $detalle = $response->json()['detail'] ?? 'Error';
+
+                // Para evitar mostrar el mensaje cuando ya está unido (409)
+                if ($response->status() === 409) {
+                    return redirect()->route('eventos.usuario');
+                }
+
                 return back()->withErrors(['error' => "No se pudo unir al evento: $detalle"]);
             }
         } catch (\Exception $e) {
@@ -174,7 +196,69 @@ class EventoController extends Controller
         }
     }
 
-    // ✅ NUEVO: Capacidad por evento (beneficiarios y donantes)
+    // Mostrar eventos disponibles para donantes (marcando eventos ya unidos)
+    public function verEventosDisponiblesDonante()
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos");
+            $eventos = $response->json();
+
+            $eventosUnidos = [];
+
+            // Verificar si el usuario ya está unido a cada evento como donante (chequear 409)
+            foreach ($eventos as $evento) {
+                $check = Http::withToken($token)->post("{$this->apiBaseUrl}/eventos/{$evento['id']}/unirse_como_donante");
+
+                if ($check->status() === 409) {
+                    $eventosUnidos[$evento['id']] = true;
+                }
+            }
+
+            foreach ($eventos as &$evento) {
+                $evento['ya_unido'] = $eventosUnidos[$evento['id']] ?? false;
+            }
+
+            return view('donaciones.eventos_disponibles_donante', ['eventos' => $eventos]);
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'No se pudieron cargar los eventos.']);
+        }
+    }
+
+    // Unirse como donante a un evento
+    public function unirseEventoDonante($id)
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->post("{$this->apiBaseUrl}/eventos/{$id}/unirse_como_donante");
+
+            if ($response->successful()) {
+                return redirect()->route('eventos.donante')->with('success', 'Te uniste correctamente al evento.');
+            } else {
+                $detalle = $response->json()['detail'] ?? 'Error';
+
+                // Evitar mostrar mensaje si ya está unido (409)
+                if ($response->status() === 409) {
+                    return redirect()->route('eventos.donante');
+                }
+
+                return back()->withErrors(['error' => "No se pudo unir al evento: $detalle"]);
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al conectar con la API.']);
+        }
+    }
+
+    // NUEVO: Capacidad por evento (beneficiarios y donantes)
     public function capacidad()
     {
         $token = Session::get('access_token');

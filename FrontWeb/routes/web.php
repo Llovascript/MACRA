@@ -23,12 +23,10 @@ Route::middleware(['auth.check'])->group(function () {
         Route::get('/', [EventoController::class, 'menu'])->name('admin.eventos.menu');
         Route::get('/crear', [EventoController::class, 'create'])->name('admin.eventos.create');
         Route::post('/crear', [EventoController::class, 'store'])->name('admin.eventos.store');
-
         Route::get('/gestionar', [EventoController::class, 'manage'])->name('admin.eventos.manage');
         Route::delete('/{id}', [EventoController::class, 'destroy'])->name('admin.eventos.destroy');
         Route::get('/{id}/editar', [EventoController::class, 'edit'])->name('admin.eventos.edit');
         Route::post('/{id}/actualizar', [EventoController::class, 'update'])->name('admin.eventos.update');
-
         Route::get('/capacidad', [EventoController::class, 'capacidad'])->name('admin.eventos.capacidad');
     });
 
@@ -36,15 +34,14 @@ Route::middleware(['auth.check'])->group(function () {
     Route::get('/eventos/usuario', [EventoController::class, 'verEventosDisponibles'])->name('eventos.usuario');
     Route::post('/eventos/unirse/{id}', [EventoController::class, 'unirseEvento'])->name('eventos.unirse');
 
+    // Rutas para donantes
+    Route::get('/eventos/donante', [EventoController::class, 'verEventosDisponiblesDonante'])->name('eventos.donante');
+    Route::post('/eventos/donante/unirse/{id}', [EventoController::class, 'unirseEventoDonante'])->name('eventos.unirse.donante');
+
     // ✅ Sistema completo de donaciones
     Route::prefix('donaciones')->group(function () {
-        // Vista para crear nueva donación
         Route::get('/crear', [DonacionController::class, 'crear'])->name('donaciones.crear');
-        
-        // Procesar formulario de donación
         Route::post('/guardar', [DonacionController::class, 'guardar'])->name('donaciones.guardar');
-        
-        // Historial de donaciones
         Route::get('/historial', [DonacionController::class, 'historial'])->name('donaciones.historial');
     });
 });
