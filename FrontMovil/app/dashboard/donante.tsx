@@ -52,7 +52,7 @@ export default function DonanteDashboard() {
         router.push("/donante/donaciones")
         break
       default:
-        Alert.alert("Próximamente", `La función ${option} estará disponible pronto.`)
+        router.push("/donante/eventos")
         break
     }
   }
@@ -91,13 +91,6 @@ export default function DonanteDashboard() {
                 <MaterialCommunityIcons name="calendar-star" size={40} color="#FF5722" />
               </View>
               <Text style={styles.menuText}>Eventos</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Estatus Solicitudes")}>
-              <View style={styles.iconContainer}>
-                <MaterialCommunityIcons name="clipboard-check" size={40} color="#00BCD4" />
-              </View>
-              <Text style={styles.menuText}>Estatus{"\n"}Solicitudes</Text>
             </TouchableOpacity>
           </View>
         </View>

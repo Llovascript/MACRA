@@ -44,7 +44,7 @@ export default function BeneficiarioDashboard() {
   }
 
   const handleMenuOption = (option: string) => {
-    Alert.alert("Próximamente", `La función ${option} estará disponible pronto.`)
+    router.push(`beneficiarios/${option}`)
   }
 
   return (
@@ -59,14 +59,14 @@ export default function BeneficiarioDashboard() {
         <Text style={styles.welcomeText}>Beneficiario!</Text>
 
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Perfil")}>
+          <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("perfil")}>
             <View style={styles.iconContainer}>
               <MaterialCommunityIcons name="account-circle" size={40} color="#2196F3" />
             </View>
             <Text style={styles.menuText}>Perfil</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("Eventos")}>
+          <TouchableOpacity style={styles.menuCard} onPress={() => handleMenuOption("eventos")}>
             <View style={styles.iconContainer}>
               <MaterialCommunityIcons name="calendar-star" size={40} color="#FF5722" />
             </View>
