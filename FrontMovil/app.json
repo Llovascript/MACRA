@@ -37,6 +37,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "FASTAPI_BASE_URL": "https://fastapi-2hwp.onrender.com",
+      "FASTAPI_DEV_BASE_URL": "http://192.168.1.110:5001"
     }
   }
 }

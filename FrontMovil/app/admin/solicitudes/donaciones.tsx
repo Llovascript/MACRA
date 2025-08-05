@@ -7,9 +7,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  FlatList,
-  Alert,
+  ScrollView,
   ActivityIndicator,
+  Alert,
   RefreshControl,
 } from "react-native"
 import { useRouter } from "expo-router"
@@ -20,64 +20,137 @@ import { generateFastApiUrl } from "@/utils"
 interface Usuario {
   id: number
   nombre: string
-  aP: string
-  aM: string
+  aP?: string
+  aM?: string
   correo: string
+  telefono?: string
 }
 
-interface Articulo {
+interface ArticuloPresentacion {
   id: number
-  nombre: string
-}
-
-interface Unidad {
-  id: number
-  nombre: string
-}
-
-interface ArtPresentacion {
-  id: number
-  cantidad: number
-  articulo: Articulo
-  unidad: Unidad
+  articulo?: {
+    id: number
+    nombre: string
+    categoria?: {
+      id: number
+      nombre: string
+    }
+  }
+  unidad_medida?: {
+    id: number
+    nombre: string
+  }
+  cantidad_presentacion?: number
 }
 
 interface Donacion {
   id: number
-  tipo_donante: string
+  tipo_donante: string | null
   fecha: string
   cantidad: number
-  usuario_id: number
+  aprobacion: boolean | null
   articuloP_id: number
   estatus_id: number
-  aprobacion: boolean
-  del_flag: boolean
-  usuario: Usuario
-  articuloP: ArtPresentacion
+  usuario_id: number
+  usuario?: Usuario
+  articulo_presentacion?: ArticuloPresentacion
 }
 
-export default function SolicitudesDonaciones() {
+interface EstadisticasDonaciones {
+  total: number
+  pendientes: number
+  aprobadas: number
+  rechazadas: number
+}
+
+export default function AdminDonacionesScreen() {
   const [donaciones, setDonaciones] = useState<Donacion[]>([])
+  const [estadisticas, setEstadisticas] = useState<EstadisticasDonaciones>({
+    total: 0,
+    pendientes: 0,
+    aprobadas: 0,
+    rechazadas: 0,
+  })
+  const [usuarios, setUsuarios] = useState<{ [key: number]: Usuario }>({})
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [processingId, setProcessingId] = useState<number | null>(null)
   const router = useRouter()
-  const itemsPerPage = 10
+
+  // Datos de respaldo para cuando no se puedan cargar desde la API
+  const presentacionesBackup: { [key: number]: { nombre: string; unidad: string; categoria: string } } = {
+    1: { nombre: "Arroz", unidad: "Kilogramo", categoria: "Alimentos" },
+    2: { nombre: "Frijoles", unidad: "Kilogramo", categoria: "Alimentos" },
+    3: { nombre: "Aceite", unidad: "Litro", categoria: "Alimentos" },
+    4: { nombre: "Leche", unidad: "Litro", categoria: "Alimentos" },
+    5: { nombre: "Huevos", unidad: "Piezas", categoria: "Alimentos" },
+    6: { nombre: "Pan", unidad: "Pieza", categoria: "Alimentos" },
+    7: { nombre: "Azúcar", unidad: "Kilogramo", categoria: "Alimentos" },
+    8: { nombre: "Sal", unidad: "Kilogramo", categoria: "Alimentos" },
+    9: { nombre: "Pasta", unidad: "Gramos", categoria: "Alimentos" },
+    10: { nombre: "Atún", unidad: "Lata", categoria: "Alimentos" },
+    11: { nombre: "Jabón", unidad: "Pieza", categoria: "Limpieza" },
+    12: { nombre: "Detergente", unidad: "Litro", categoria: "Limpieza" },
+    13: { nombre: "Papel Higiénico", unidad: "Rollos", categoria: "Higiene" },
+    14: { nombre: "Pasta de Dientes", unidad: "Tubo", categoria: "Higiene" },
+    15: { nombre: "Shampoo", unidad: "Botella", categoria: "Higiene" },
+  }
 
   useEffect(() => {
-    fetchDonaciones()
+    loadData()
   }, [])
 
-  const fetchDonaciones = async () => {
+  const loadUsuarios = async (token: string) => {
     try {
-      const token = await AsyncStorage.getItem("token")
-      if (!token) {
-        Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
-        router.replace("/login")
-        return
-      }
+      const response = await fetch(generateFastApiUrl("/usuarios/"), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
 
+      if (response.ok) {
+        const usuariosData = await response.json()
+        const usuariosMap: { [key: number]: Usuario } = {}
+
+        usuariosData.forEach((usuario: Usuario) => {
+          usuariosMap[usuario.id] = usuario
+        })
+
+        setUsuarios(usuariosMap)
+        console.log("Usuarios cargados:", Object.keys(usuariosMap).length)
+      } else {
+        console.error("Error al cargar usuarios:", response.status)
+      }
+    } catch (error) {
+      console.error("Error loading usuarios:", error)
+    }
+  }
+
+  const loadEstadisticas = async (token: string) => {
+    try {
+      const response = await fetch(generateFastApiUrl("/admin/donaciones/estadisticas"), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const stats = await response.json()
+        setEstadisticas(stats)
+        console.log("Estadísticas cargadas:", stats)
+      } else {
+        console.log("No se pudieron cargar estadísticas, usando valores por defecto")
+      }
+    } catch (error) {
+      console.error("Error loading estadisticas:", error)
+    }
+  }
+
+  const loadDonaciones = async (token: string) => {
+    try {
+      console.log("Cargando donaciones pendientes...")
       const response = await fetch(generateFastApiUrl("/donaciones/"), {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -87,256 +160,312 @@ export default function SolicitudesDonaciones() {
 
       if (response.ok) {
         const data = await response.json()
-        console.log("Donaciones data:", data) // Para debug
+        console.log("Donaciones cargadas:", JSON.stringify(data, null, 2))
 
-        // Filtrar donaciones pendientes (aprobacion = false y del_flag = false)
-        const donacionesPendientes = data.filter((donacion: Donacion) => !donacion.aprobacion && !donacion.del_flag)
+        // Filtrar donaciones pendientes
+        const donacionesPendientes = (data || []).filter((d: Donacion) => {
+          return d.aprobacion === null || d.aprobacion === false || d.aprobacion === undefined
+        })
+
+        console.log("Donaciones después del filtro:", donacionesPendientes)
+        console.log("Cantidad de donaciones pendientes:", donacionesPendientes.length)
 
         setDonaciones(donacionesPendientes)
-        setTotalPages(Math.ceil(donacionesPendientes.length / itemsPerPage))
-      } else if (response.status === 401) {
-        Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
-        await AsyncStorage.removeItem("token")
-        router.replace("/login")
       } else {
-        const errorData = await response.json()
-        console.error("Error response:", errorData)
+        console.error("Error al cargar donaciones:", response.status)
+        const errorText = await response.text()
+        console.error("Error details:", errorText)
         Alert.alert("Error", "No se pudieron cargar las donaciones")
       }
     } catch (error) {
-      console.error("Error fetching donaciones:", error)
-      Alert.alert("Error", "Error de conexión. Verifica tu conexión a internet.")
+      console.error("Error loading donaciones:", error)
+      Alert.alert("Error", "Error de conexión al cargar las donaciones")
+    }
+  }
+
+  const loadData = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token")
+      if (!token) {
+        Alert.alert("Error", "No se encontró información de autenticación")
+        router.replace("/login")
+        return
+      }
+
+      // Cargar datos en paralelo
+      await Promise.all([loadUsuarios(token), loadDonaciones(token), loadEstadisticas(token)])
+    } catch (error) {
+      console.error("Error loading data:", error)
+      Alert.alert("Error", "Error de conexión")
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
   }
 
-  const handleApprove = async (donacionId: number) => {
-    Alert.alert("Confirmar Aprobación", "¿Estás seguro de que quieres aprobar esta donación?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Aprobar",
-        onPress: () => updateDonacionStatus(donacionId, true),
-      },
-    ])
+  const onRefresh = () => {
+    setRefreshing(true)
+    loadData()
   }
 
-  const handleReject = async (donacionId: number) => {
-    Alert.alert("Confirmar Rechazo", "¿Estás seguro de que quieres rechazar esta donación?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Rechazar",
-        style: "destructive",
-        onPress: () => updateDonacionStatus(donacionId, false),
-      },
-    ])
-  }
-
-  const updateDonacionStatus = async (donacionId: number, aprobacion: boolean) => {
-    try {
-      const token = await AsyncStorage.getItem("token")
-      if (!token) {
-        Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
-        router.replace("/login")
-        return
+  const getUsuarioInfo = (usuarioId: number) => {
+    const usuario = usuarios[usuarioId]
+    if (usuario) {
+      const nombreCompleto = `${usuario.nombre} ${usuario.aP || ""} ${usuario.aM || ""}`.trim()
+      return {
+        nombre: nombreCompleto,
+        correo: usuario.correo,
+        telefono: usuario.telefono,
       }
+    }
 
-      // Intentar diferentes endpoints posibles
-      let response = await fetch(generateFastApiUrl(`/donaciones/${donacionId}`), {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ aprobacion: aprobacion }),
-      })
-
-      // Si no funciona, intentar con el endpoint de aprobar
-      if (!response.ok) {
-        response = await fetch(generateFastApiUrl(`/donaciones/${donacionId}/aprobar?aprobacion=${aprobacion}`), {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        })
-      }
-
-      if (response.ok) {
-        Alert.alert("Éxito", `Donación ${aprobacion ? "aprobada" : "rechazada"} correctamente`)
-        fetchDonaciones() // Recargar la lista
-      } else if (response.status === 401) {
-        Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
-        await AsyncStorage.removeItem("token")
-        router.replace("/login")
-      } else {
-        const errorData = await response.json()
-        console.error("Error updating donacion:", errorData)
-        Alert.alert("Error", "No se pudo actualizar el estado de la donación")
-      }
-    } catch (error) {
-      console.error("Error updating donacion status:", error)
-      Alert.alert("Error", "Error de conexión")
+    return {
+      nombre: `Usuario ID ${usuarioId}`,
+      correo: "Sin correo",
+      telefono: null,
     }
   }
 
-  const onRefresh = () => {
-    setRefreshing(true)
-    setCurrentPage(1)
-    fetchDonaciones()
+  const getArticuloInfo = (donacion: Donacion) => {
+    // Primero intentar usar los datos de la API
+    if (donacion.articulo_presentacion?.articulo) {
+      const articulo = donacion.articulo_presentacion.articulo
+      const categoria = articulo.categoria?.nombre || "Sin categoría"
+      const unidad = donacion.articulo_presentacion.unidad_medida?.nombre || "Unidad"
+
+      return {
+        nombre: articulo.nombre,
+        unidad: unidad,
+        categoria: categoria,
+        source: "api",
+      }
+    }
+
+    // Si no hay datos de la API, usar datos de respaldo
+    const backup = presentacionesBackup[donacion.articuloP_id]
+    if (backup) {
+      return {
+        nombre: backup.nombre,
+        unidad: backup.unidad,
+        categoria: backup.categoria,
+        source: "backup",
+      }
+    }
+
+    // Si no hay datos en ningún lado, mostrar información genérica
+    return {
+      nombre: `Artículo ID ${donacion.articuloP_id}`,
+      unidad: "Unidad",
+      categoria: "Sin categoría",
+      source: "generic",
+    }
   }
 
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString)
       return date.toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "2-digit",
         year: "numeric",
+        month: "long",
+        day: "numeric",
       })
-    } catch (error) {
+    } catch {
       return dateString
     }
   }
 
-  const formatDonacionDetails = (donacion: Donacion) => {
+  const handleApproval = async (donacionId: number, aprobar: boolean) => {
+    setProcessingId(donacionId)
     try {
-      const articulo = donacion.articuloP?.articulo?.nombre || "Artículo"
-      const unidad = donacion.articuloP?.unidad?.nombre || "unidad"
-      const cantidad = donacion.cantidad || donacion.articuloP?.cantidad || 0
-      return `${cantidad} ${articulo} (${unidad})`
+      const token = await AsyncStorage.getItem("token")
+      if (!token) {
+        Alert.alert("Error", "No se encontró información de autenticación")
+        return
+      }
+
+      const action = aprobar ? "aprobar" : "rechazar"
+      console.log(`${action} donación ${donacionId} con aprobacion: ${aprobar}`)
+
+      // Usar el endpoint correcto con método PUT y parámetro aprobacion
+      const response = await fetch(generateFastApiUrl(`/donaciones/${donacionId}/aprobar?aprobacion=${aprobar}`), {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      console.log("Respuesta del servidor:", response.status)
+
+      if (response.ok) {
+        const responseData = await response.json()
+        console.log("Donación actualizada:", responseData)
+        Alert.alert("¡Éxito!", `Donación ${aprobar ? "aprobada" : "rechazada"} correctamente`)
+        loadData() // Recargar todos los datos
+      } else {
+        const errorData = await response.text()
+        console.error(`Error al ${action} donación:`, errorData)
+        Alert.alert("Error", `No se pudo ${action} la donación: ${errorData}`)
+      }
     } catch (error) {
-      return "Información no disponible"
+      console.error(`Error ${aprobar ? "approving" : "rejecting"} donacion:`, error)
+      Alert.alert("Error", "Error de conexión")
+    } finally {
+      setProcessingId(null)
     }
   }
 
-  const formatDonanteName = (usuario: Usuario) => {
-    if (!usuario) return "Usuario no disponible"
-    return `${usuario.nombre || ""} ${usuario.aP || ""} ${usuario.aM || ""}`.trim() || usuario.correo || "Sin nombre"
+  const confirmApproval = (donacion: Donacion, aprobar: boolean) => {
+    const articuloInfo = getArticuloInfo(donacion)
+    const usuarioInfo = getUsuarioInfo(donacion.usuario_id)
+    const action = aprobar ? "aprobar" : "rechazar"
+
+    Alert.alert(
+      `¿${aprobar ? "Aprobar" : "Rechazar"} donación?`,
+      `${aprobar ? "Aprobarás" : "Rechazarás"} la donación de:
+      
+• Donante: ${usuarioInfo.nombre}
+• Correo: ${usuarioInfo.correo}
+• Artículo: ${articuloInfo.nombre}
+• Cantidad: ${donacion.cantidad} ${articuloInfo.unidad}
+• Fecha: ${formatDate(donacion.fecha)}
+
+Esta acción no se puede deshacer.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: aprobar ? "Aprobar" : "Rechazar",
+          style: aprobar ? "default" : "destructive",
+          onPress: () => handleApproval(donacion.id, aprobar),
+        },
+      ],
+    )
   }
 
-  const getCurrentPageItems = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    return donaciones.slice(startIndex, endIndex)
-  }
+  const renderDonacionItem = (donacion: Donacion) => {
+    const articuloInfo = getArticuloInfo(donacion)
+    const usuarioInfo = getUsuarioInfo(donacion.usuario_id)
+    const isProcessing = processingId === donacion.id
 
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-    }
-  }
+    return (
+      <View key={donacion.id} style={styles.donacionCard}>
+        <View style={styles.cardHeader}>
+          <View style={styles.donorInfo}>
+            <Text style={styles.donorName}>{usuarioInfo.nombre}</Text>
+            <Text style={styles.donorEmail}>{usuarioInfo.correo}</Text>
+            {usuarioInfo.telefono && <Text style={styles.donorPhone}>📞 {usuarioInfo.telefono}</Text>}
+          </View>
+          <View style={styles.pendingBadge}>
+            <MaterialCommunityIcons name="clock" size={16} color="#FF9800" />
+            <Text style={styles.pendingText}>Pendiente</Text>
+          </View>
+        </View>
 
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-    }
-  }
+        <View style={styles.cardBody}>
+          <View style={styles.articleSection}>
+            <Text style={styles.articleName}>{articuloInfo.nombre}</Text>
+            <Text style={styles.articleDetails}>
+              {donacion.cantidad} {articuloInfo.unidad} • {articuloInfo.categoria}
+            </Text>
+            {articuloInfo.source !== "api" && (
+              <Text style={styles.sourceWarning}>
+                {articuloInfo.source === "backup" ? "📋 Datos locales" : "⚠️ Datos genéricos"}
+              </Text>
+            )}
+          </View>
 
-  const renderDonacion = ({ item }: { item: Donacion }) => (
-    <View style={styles.tableRow}>
-      <View style={[styles.cell, styles.donanteColumn]}>
-        <Text style={styles.cellText} numberOfLines={2}>
-          {formatDonanteName(item.usuario)}
-        </Text>
-      </View>
-      <View style={[styles.cell, styles.donacionColumn]}>
-        <Text style={styles.cellText} numberOfLines={2}>
-          {formatDonacionDetails(item)}
-        </Text>
-      </View>
-      <View style={[styles.cell, styles.fechaColumn]}>
-        <Text style={styles.cellText}>{formatDate(item.fecha)}</Text>
-      </View>
-      <View style={[styles.cell, styles.accionColumn]}>
+          <View style={styles.infoRow}>
+            <MaterialCommunityIcons name="calendar" size={16} color="#666" />
+            <Text style={styles.infoText}>Fecha: {formatDate(donacion.fecha)}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <MaterialCommunityIcons name="identifier" size={16} color="#666" />
+            <Text style={styles.infoText}>ID: {donacion.id}</Text>
+          </View>
+        </View>
+
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.approveButton} onPress={() => handleApprove(item.id)}>
-            <MaterialCommunityIcons name="check" size={16} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.rejectButton} onPress={() => handleReject(item.id)}>
-            <MaterialCommunityIcons name="close" size={16} color="white" />
+
+          <TouchableOpacity
+            style={[styles.approveButton, isProcessing && styles.buttonDisabled]}
+            onPress={() => confirmApproval(donacion, true)}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <MaterialCommunityIcons name="check" size={18} color="#fff" />
+                <Text style={styles.buttonText}>Aprobar</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </View>
-    </View>
-  )
+    )
+  }
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Cargando solicitudes de donaciones...</Text>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Solicitudes de Donación</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B4513" />
+          <Text style={styles.loadingText}>Cargando solicitudes...</Text>
+        </View>
       </SafeAreaView>
     )
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>Solicitudes de donaciones</Text>
+        <Text style={styles.headerTitle}>Solicitudes de Donación</Text>
       </View>
 
-      <View style={styles.content}>
-        {/* Table */}
-        <View style={styles.table}>
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, styles.donanteColumn]}>Donante</Text>
-            <Text style={[styles.headerCell, styles.donacionColumn]}>Donación</Text>
-            <Text style={[styles.headerCell, styles.fechaColumn]}>Fecha</Text>
-            <Text style={[styles.headerCell, styles.accionColumn]}>Acción</Text>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#8B4513"]} />}
+      >
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{estadisticas.pendientes || donaciones.length}</Text>
+            <Text style={styles.statLabel}>Pendientes</Text>
           </View>
-
-          {/* Table Body */}
-          {getCurrentPageItems().length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons name="package-variant-closed" size={64} color="#ccc" />
-              <Text style={styles.emptyText}>No hay solicitudes de donaciones pendientes</Text>
-              <Text style={styles.emptySubtext}>Las nuevas solicitudes aparecerán aquí</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={getCurrentPageItems()}
-              renderItem={renderDonacion}
-              keyExtractor={(item) => item.id.toString()}
-              showsVerticalScrollIndicator={false}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            />
-          )}
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{estadisticas.aprobadas || 0}</Text>
+            <Text style={styles.statLabel}>Aprobadas</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{estadisticas.total || donaciones.length}</Text>
+            <Text style={styles.statLabel}>Total</Text>
+          </View>
         </View>
 
-        {/* Pagination */}
-        {donaciones.length > 0 && (
-          <View style={styles.pagination}>
-            <TouchableOpacity
-              style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
-              onPress={goToPreviousPage}
-              disabled={currentPage === 1}
-            >
-              <Text style={[styles.paginationButtonText, currentPage === 1 && styles.disabledText]}>← Anterior</Text>
-            </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Solicitudes Pendientes de Aprobación</Text>
 
-            <Text style={styles.pageInfo}>
-              Página {currentPage} de {totalPages}
-            </Text>
-
-            <TouchableOpacity
-              style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
-              onPress={goToNextPage}
-              disabled={currentPage === totalPages}
-            >
-              <Text style={[styles.paginationButtonText, currentPage === totalPages && styles.disabledText]}>
-                Siguiente →
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+          {donaciones.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons name="gift-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyTitle}>No hay solicitudes pendientes</Text>
+              <Text style={styles.emptySubtitle}>Todas las donaciones han sido procesadas</Text>
+            </View>
+          ) : (
+            <View style={styles.donacionesList}>{donaciones.map(renderDonacionItem)}</View>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -346,159 +475,202 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+  header: {
+    backgroundColor: "#8B4513",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
     color: "#666",
   },
-  header: {
+  statsContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingTop: 20,
+    padding: 20,
+    gap: 10,
   },
-  backButton: {
-    marginRight: 15,
-    padding: 5,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  content: {
+  statCard: {
     flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FF9800",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+  },
+  section: {
     padding: 20,
   },
-  table: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    overflow: "hidden",
-    elevation: 2,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 15,
+  },
+  donacionesList: {
+    gap: 15,
+  },
+  donacionCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    flex: 1,
+    elevation: 3,
   },
-  tableHeader: {
+  cardHeader: {
     flexDirection: "row",
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingVertical: 12,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
-  headerCell: {
-    fontSize: 14,
+  donorInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  donorName: {
+    fontSize: 16,
     fontWeight: "bold",
     color: "#333",
-    textAlign: "center",
+    marginBottom: 2,
   },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingVertical: 12,
-    minHeight: 60,
+  donorEmail: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
   },
-  cell: {
-    justifyContent: "center",
-    paddingHorizontal: 8,
-  },
-  cellText: {
+  donorPhone: {
     fontSize: 12,
-    color: "#333",
-    textAlign: "center",
+    color: "#888",
   },
-  donanteColumn: {
-    flex: 2.5,
+  pendingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: "#FFF3E0",
+    gap: 4,
   },
-  donacionColumn: {
-    flex: 3,
+  pendingText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#FF9800",
   },
-  fechaColumn: {
-    flex: 1.5,
+  cardBody: {
+    gap: 8,
+    marginBottom: 16,
   },
-  accionColumn: {
-    flex: 1.5,
+  articleSection: {
+    marginBottom: 8,
+  },
+  articleName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#8B4513",
+    marginBottom: 4,
+  },
+  articleDetails: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  sourceWarning: {
+    fontSize: 12,
+    color: "#FF9800",
+    fontStyle: "italic",
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#666",
   },
   actionButtons: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 5,
+    gap: 12,
   },
   approveButton: {
-    backgroundColor: "#28a745",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    flex: 1,
+    backgroundColor: "#4CAF50",
+    borderRadius: 8,
+    paddingVertical: 12,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 6,
   },
   rejectButton: {
-    backgroundColor: "#dc3545",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyContainer: {
     flex: 1,
+    backgroundColor: "#F44336",
+    borderRadius: 8,
+    paddingVertical: 12,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: 40,
+    gap: 6,
   },
-  emptyText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 10,
-    fontWeight: "500",
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#999",
-    textAlign: "center",
-    marginTop: 5,
-  },
-  pagination: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 20,
-    paddingHorizontal: 10,
-  },
-  paginationButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 5,
-  },
-  paginationButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  disabledButton: {
+  buttonDisabled: {
     backgroundColor: "#ccc",
   },
-  disabledText: {
-    color: "#999",
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
-  pageInfo: {
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 16,
+  },
+  emptySubtitle: {
     fontSize: 14,
     color: "#666",
+    marginTop: 8,
   },
 })

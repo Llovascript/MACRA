@@ -44,7 +44,7 @@ def register_user(usuario: UsuarioCreate, db: Session = Depends(get_db)):
         if not usuario_dict.get("estatus_id"):
             usuario_dict["estatus_id"] = 1
         if not usuario_dict.get("aprobacion"):
-            usuario_dict["aprobacion"] = True  # Auto-aprobar por ahora(cambiar despues a false)
+            usuario_dict["aprobacion"] = False  # Auto-aprobar por ahora(cambiar despues a false)
         if not usuario_dict.get("del_flag"):
             usuario_dict["del_flag"] = False
             

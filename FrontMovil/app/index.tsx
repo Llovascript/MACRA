@@ -19,9 +19,6 @@ export default function WelcomeScreen() {
           <Text style={styles.description}>
             Bienvenido a MACRA, un espacio donde tu ayuda se transforma en esperanza.
           </Text>
-          <View style={styles.placeholderImageContainer}>
-            <MaterialCommunityIcons name="image" size={80} color="#ccc" />
-          </View>
         </View>
 
         <View style={styles.bottomSection}>

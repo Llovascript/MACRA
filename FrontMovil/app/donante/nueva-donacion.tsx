@@ -31,10 +31,8 @@ export default function NuevaDonacionScreen() {
   const [articuloPId, setArticuloPId] = useState<number | null>(null)
   const [cantidadDonacion, setCantidadDonacion] = useState("")
   const [loading, setLoading] = useState(false)
-
   const [showPresentacionModal, setShowPresentacionModal] = useState(false)
   const [selectedPresentacion, setSelectedPresentacion] = useState<PresentacionManual | null>(null)
-
   const router = useRouter()
 
   // Presentaciones manuales - puedes agregar o modificar estas opciones
@@ -151,18 +149,15 @@ export default function NuevaDonacionScreen() {
       Alert.alert("Error", "Por favor selecciona un artículo")
       return false
     }
-
     if (!cantidadDonacion.trim()) {
       Alert.alert("Error", "Por favor ingresa la cantidad a donar")
       return false
     }
-
     const cantDonNum = Number.parseInt(cantidadDonacion)
     if (isNaN(cantDonNum) || cantDonNum <= 0) {
       Alert.alert("Error", "La cantidad a donar debe ser un número mayor a 0")
       return false
     }
-
     return true
   }
 
@@ -182,15 +177,15 @@ export default function NuevaDonacionScreen() {
 
       const userData = JSON.parse(userDataString)
 
-      // Crear la donación - usando "individual" como tipo_donante por defecto
+      // Crear la donación - NO incluir aprobacion en el objeto para que el backend use su valor por defecto
       const donacionData = {
-        tipo_donante: "persona", // Usar string válido del enum
-        fecha: new Date().toISOString().split("T")[0], // Fecha actual en formato YYYY-MM-DD
+        tipo_donante: "persona",
+        fecha: new Date().toISOString().split("T")[0],
         cantidad: Number.parseInt(cantidadDonacion),
         usuario_id: userData.id,
         articuloP_id: articuloPId,
         estatus_id: 3, // ID 3 = Pendiente
-        aprobacion: false, // false por defecto
+        // NO incluir aprobacion para que el backend use null por defecto
       }
 
       console.log("Creating donacion:", donacionData)

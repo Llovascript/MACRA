@@ -25,12 +25,18 @@ interface Evento {
   yaRegistrado?: boolean
 }
 
+interface DonanteEvento {
+  id: number
+  evento_id: number
+  donante_id: number
+  fecha_registro: string
+}
+
 export default function EventosScreen() {
   const [eventos, setEventos] = useState<Evento[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [joiningEvent, setJoiningEvent] = useState<number | null>(null)
-  const [userId, setUserId] = useState<number | null>(null)
 
   const loadEventos = async () => {
     try {
@@ -41,21 +47,6 @@ export default function EventosScreen() {
         return
       }
 
-      // Obtener información del usuario para conseguir el ID
-      const userResponse = await fetch(generateFastApiUrl("/me"), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      let currentUserId = null
-      if (userResponse.ok) {
-        const userData = await userResponse.json()
-        currentUserId = userData.id
-        setUserId(currentUserId)
-      }
-
       // Cargar eventos disponibles
       const eventosResponse = await fetch(generateFastApiUrl("/eventos/"), {
         headers: {
@@ -64,31 +55,54 @@ export default function EventosScreen() {
         },
       })
 
-      if (eventosResponse.ok) {
-        const eventosData = await eventosResponse.json()
-
-        // Filtrar solo eventos activos (del_flag = 0 o false)
-        const eventosActivos = eventosData.filter((evento: Evento) => !evento.del_flag)
-
-        // Si tenemos el ID del usuario, verificar cuáles eventos ya están registrados
-        if (currentUserId) {
-          const eventosConEstado = await Promise.all(
-            eventosActivos.map(async (evento: Evento) => {
-              // Aquí podrías hacer una consulta directa a la base de datos si fuera necesario
-              // Por ahora, asumimos que no está registrado hasta que se una
-              return {
-                ...evento,
-                yaRegistrado: false,
-              }
-            }),
-          )
-          setEventos(eventosConEstado)
-        } else {
-          setEventos(eventosActivos.map((evento: Evento) => ({ ...evento, yaRegistrado: false })))
-        }
-      } else {
+      if (!eventosResponse.ok) {
+        console.error("Error cargando eventos:", eventosResponse.status)
         Alert.alert("Error", "No se pudieron cargar los eventos")
+        return
       }
+
+      const eventosData = await eventosResponse.json()
+      console.log("Eventos cargados:", eventosData.length)
+
+      // Filtrar solo eventos activos (del_flag = 0 o false)
+      const eventosActivos = eventosData.filter((evento: Evento) => !evento.del_flag)
+      console.log("Eventos activos:", eventosActivos.length)
+
+      // Obtener eventos donde ya estoy registrado como donante
+      const misEventosResponse = await fetch(generateFastApiUrl("/eventos/me/como_donante"), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      let eventosRegistrados: number[] = []
+      if (misEventosResponse.ok) {
+        const misEventosData: DonanteEvento[] = await misEventosResponse.json()
+        eventosRegistrados = misEventosData.map((evento) => evento.evento_id)
+        console.log("Eventos donde estoy registrado como donante:", eventosRegistrados)
+      } else {
+        console.log("Error obteniendo mis eventos como donante:", misEventosResponse.status)
+        // Si hay error, asumir que no estoy registrado en ningún evento
+        eventosRegistrados = []
+      }
+
+      // Marcar eventos donde ya estoy registrado
+      const eventosConEstado = eventosActivos.map((evento: Evento) => ({
+        ...evento,
+        yaRegistrado: eventosRegistrados.includes(evento.id),
+      }))
+
+      console.log(
+        "Eventos con estado final:",
+        eventosConEstado.map((e) => ({
+          id: e.id,
+          nombre: e.nombre,
+          yaRegistrado: e.yaRegistrado,
+        })),
+      )
+
+      setEventos(eventosConEstado)
     } catch (error) {
       console.error("Error cargando eventos:", error)
       Alert.alert("Error", "Error de conexión")
@@ -103,6 +117,8 @@ export default function EventosScreen() {
       setJoiningEvent(eventoId)
       const token = await AsyncStorage.getItem("token")
 
+      console.log(`Intentando unirse al evento ${eventoId}`)
+
       const response = await fetch(generateFastApiUrl(`/eventos/${eventoId}/unirse_como_donante`), {
         method: "POST",
         headers: {
@@ -111,14 +127,17 @@ export default function EventosScreen() {
         },
       })
 
+      console.log("Respuesta del servidor:", response.status)
+
       if (response.ok) {
+        const responseData = await response.json()
+        console.log("Unión exitosa:", responseData)
         Alert.alert("¡Éxito!", "Te has unido al evento correctamente")
-        // Actualizar el estado local
-        setEventos((prev) =>
-          prev.map((evento) => (evento.id === eventoId ? { ...evento, yaRegistrado: true } : evento)),
-        )
+        // Recargar todos los eventos para obtener el estado actualizado
+        await loadEventos()
       } else {
         const errorData = await response.json()
+        console.error("Error al unirse:", errorData)
         Alert.alert("Error", errorData.detail || "No se pudo unir al evento")
       }
     } catch (error) {
@@ -130,12 +149,17 @@ export default function EventosScreen() {
   }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
+    try {
+      const [year, month, day] = dateString.split("-").map(Number)
+      const date = new Date(year, month - 1, day)
+      return date.toLocaleDateString("es-ES", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    } catch (error) {
+      return dateString
+    }
   }
 
   const renderEvento = ({ item }: { item: Evento }) => (

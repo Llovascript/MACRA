@@ -1,16 +1,20 @@
-import { Constants } from "expo-constants";
+import Constants from "expo-constants";
 
-const FASTAPI_DEV_BASE_URL = 'http://192.168.100.4:5001';
+const { FASTAPI_BASE_URL, FASTAPI_DEV_BASE_URL } = Constants.expoConfig?.extra || {};
 
 export const generateFastApiUrl = (relativePath: string) => {
-    const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 
-    if (process.env.NODE_ENV === 'development') {
-        return FASTAPI_DEV_BASE_URL.concat(path);
+  if (__DEV__) {
+    if (!FASTAPI_DEV_BASE_URL) {
+      throw new Error('FASTAPI_DEV_BASE_URL no está definido en desarrollo');
     }
+    return FASTAPI_DEV_BASE_URL.concat(path);
+  }
 
-    if (!process.env.FASTAPI_BASE_URL) {
-        throw new Error('FASTAPI_BASE_URL environment is not defined in production production');
-    }
-    return process.env.FASTAPI_BASE_URL.concat(path);
+  if (!FASTAPI_BASE_URL) {
+    throw new Error('FASTAPI_BASE_URL no está definido en producción');
+  }
+
+  return FASTAPI_BASE_URL.concat(path);
 };

@@ -7,9 +7,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  FlatList,
-  Alert,
+  ScrollView,
   ActivityIndicator,
+  Alert,
   RefreshControl,
 } from "react-native"
 import { useRouter } from "expo-router"
@@ -23,30 +23,30 @@ interface Usuario {
   aP: string
   aM: string
   correo: string
+  telefono?: string
+  edad?: number
+  rfc?: string
   rol_id: number
-  aprobacion: boolean
-  del: boolean
+  aprobacion: boolean | null
+  del_flag: boolean
 }
 
-export default function SolicitudesPerfiles() {
+export default function AdminPerfilesScreen() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [processingId, setProcessingId] = useState<number | null>(null)
   const router = useRouter()
-  const itemsPerPage = 10
 
   useEffect(() => {
-    fetchUsuarios()
+    loadUsuarios()
   }, [])
 
-  const fetchUsuarios = async () => {
+  const loadUsuarios = async () => {
     try {
       const token = await AsyncStorage.getItem("token")
-
       if (!token) {
-        Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
+        Alert.alert("Error", "No se encontró información de autenticación")
         router.replace("/login")
         return
       }
@@ -54,105 +54,32 @@ export default function SolicitudesPerfiles() {
       const response = await fetch(generateFastApiUrl("/usuarios/"), {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       })
 
       if (response.ok) {
         const data = await response.json()
-
-        // Filtrar usuarios pendientes de aprobación y no eliminados
-        const usuariosPendientes = data.filter((usuario: Usuario) => !usuario.aprobacion && !usuario.del)
-
+        // Filtrar usuarios pendientes de aprobación (aprobacion === null o false) y no eliminados
+        const usuariosPendientes = (data || []).filter(
+          (usuario: Usuario) => (usuario.aprobacion === null || usuario.aprobacion === false) && !usuario.del_flag,
+        )
         setUsuarios(usuariosPendientes)
-        setTotalPages(Math.ceil(usuariosPendientes.length / itemsPerPage))
-      } else if (response.status === 401) {
-        Alert.alert("Sesión expirada", "Por favor inicia sesión nuevamente")
-        await AsyncStorage.removeItem("token")
-        router.replace("/login")
       } else {
         Alert.alert("Error", "No se pudieron cargar los usuarios")
       }
     } catch (error) {
-      Alert.alert("Error", "Error de conexión al servidor")
+      console.error("Error loading usuarios:", error)
+      Alert.alert("Error", "Error de conexión al cargar los usuarios")
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
   }
 
-  const handleApprove = async (usuario: Usuario) => {
-    Alert.alert("Aprobar Usuario", `¿Estás seguro de que deseas aprobar a ${usuario.nombre} ${usuario.aP}?`, [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Aprobar",
-        onPress: async () => {
-          try {
-            const token = await AsyncStorage.getItem("token")
-
-            const response = await fetch(generateFastApiUrl(`/usuarios/${usuario.id}`), {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                ...usuario,
-                aprobacion: true,
-              }),
-            })
-
-            if (response.ok) {
-              Alert.alert("Éxito", "Usuario aprobado correctamente")
-              fetchUsuarios() // Recargar la lista
-            } else {
-              Alert.alert("Error", "No se pudo aprobar el usuario")
-            }
-          } catch (error) {
-            Alert.alert("Error", "Error de conexión")
-          }
-        },
-      },
-    ])
-  }
-
-  const handleReject = async (usuario: Usuario) => {
-    Alert.alert(
-      "Rechazar Usuario",
-      `¿Estás seguro de que deseas rechazar a ${usuario.nombre} ${usuario.aP}? Esta acción no se puede deshacer.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Rechazar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const token = await AsyncStorage.getItem("token")
-
-              const response = await fetch(generateFastApiUrl(`/usuarios/${usuario.id}`), {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                  ...usuario,
-                  del: true,
-                }),
-              })
-
-              if (response.ok) {
-                Alert.alert("Usuario Rechazado", "El usuario ha sido rechazado y eliminado de la lista")
-                fetchUsuarios() // Recargar la lista
-              } else {
-                Alert.alert("Error", "No se pudo rechazar el usuario")
-              }
-            } catch (error) {
-              Alert.alert("Error", "Error de conexión")
-            }
-          },
-        },
-      ],
-    )
+  const onRefresh = () => {
+    setRefreshing(true)
+    loadUsuarios()
   }
 
   const getRoleName = (rolId: number) => {
@@ -164,137 +91,215 @@ export default function SolicitudesPerfiles() {
       case 3:
         return "Beneficiario"
       default:
-        return "Desconocido"
+        return "Sin rol"
     }
   }
 
-  const onRefresh = () => {
-    setRefreshing(true)
-    setCurrentPage(1)
-    fetchUsuarios()
-  }
-
-  const getCurrentPageItems = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    return usuarios.slice(startIndex, endIndex)
-  }
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
+  const getRoleColor = (rolId: number) => {
+    switch (rolId) {
+      case 1:
+        return "#FF5722"
+      case 2:
+        return "#4CAF50"
+      case 3:
+        return "#2196F3"
+      default:
+        return "#757575"
     }
   }
 
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
+  const handleApproval = async (usuarioId: number, aprobar: boolean) => {
+    setProcessingId(usuarioId)
+    try {
+      const token = await AsyncStorage.getItem("token")
+      if (!token) {
+        Alert.alert("Error", "No se encontró información de autenticación")
+        return
+      }
+
+      const usuario = usuarios.find((u) => u.id === usuarioId)
+      if (!usuario) return
+
+      const response = await fetch(generateFastApiUrl(`/usuarios/${usuarioId}`), {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...usuario,
+          aprobacion: aprobar,
+          del_flag: aprobar ? 0 : 1, // Si se rechaza, se marca como eliminado
+        }),
+      })
+
+      if (response.ok) {
+        Alert.alert("¡Éxito!", `Usuario ${aprobar ? "aprobado" : "rechazado"} correctamente`)
+        loadUsuarios() // Recargar la lista
+      } else {
+        const errorData = await response.text()
+        console.error(`Error al ${aprobar ? "aprobar" : "rechazar"} usuario:`, errorData)
+        Alert.alert("Error", `No se pudo ${aprobar ? "aprobar" : "rechazar"} el usuario`)
+      }
+    } catch (error) {
+      console.error(`Error ${aprobar ? "approving" : "rejecting"} usuario:`, error)
+      Alert.alert("Error", "Error de conexión")
+    } finally {
+      setProcessingId(null)
     }
   }
 
-  const renderUsuario = ({ item }: { item: Usuario }) => (
-    <View style={styles.tableRow}>
-      <View style={[styles.cell, styles.nombreColumn]}>
-        <Text style={styles.cellText} numberOfLines={2}>
-          {`${item.nombre} ${item.aP} ${item.aM}`}
-        </Text>
-      </View>
-      <View style={[styles.cell, styles.correoColumn]}>
-        <Text style={styles.cellText} numberOfLines={2}>
-          {item.correo}
-        </Text>
-      </View>
-      <View style={[styles.cell, styles.rolColumn]}>
-        <Text style={styles.cellText}>{getRoleName(item.rol_id)}</Text>
-      </View>
-      <View style={[styles.cell, styles.accionColumn]}>
+  const confirmApproval = (usuario: Usuario, aprobar: boolean) => {
+    const action = aprobar ? "aprobar" : "rechazar"
+    const userName = `${usuario.nombre} ${usuario.aP} ${usuario.aM}`.trim()
+
+    Alert.alert(
+      `¿${aprobar ? "Aprobar" : "Rechazar"} usuario?`,
+      `${aprobar ? "Aprobarás" : "Rechazarás"} el perfil de:
+      
+• Nombre: ${userName}
+• Correo: ${usuario.correo}
+• Rol: ${getRoleName(usuario.rol_id)}
+• Teléfono: ${usuario.telefono || "No especificado"}
+
+Esta acción no se puede deshacer.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: aprobar ? "Aprobar" : "Rechazar",
+          style: aprobar ? "default" : "destructive",
+          onPress: () => handleApproval(usuario.id, aprobar),
+        },
+      ],
+    )
+  }
+
+  const renderUsuarioItem = (usuario: Usuario) => {
+    const userName = `${usuario.nombre} ${usuario.aP} ${usuario.aM}`.trim()
+    const isProcessing = processingId === usuario.id
+
+    return (
+      <View key={usuario.id} style={styles.usuarioCard}>
+        <View style={styles.cardHeader}>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{userName}</Text>
+            <Text style={styles.userEmail}>{usuario.correo}</Text>
+          </View>
+          <View style={[styles.roleBadge, { backgroundColor: getRoleColor(usuario.rol_id) }]}>
+            <Text style={styles.roleText}>{getRoleName(usuario.rol_id)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.cardBody}>
+          {usuario.telefono && (
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="phone" size={16} color="#666" />
+              <Text style={styles.infoText}>Teléfono: {usuario.telefono}</Text>
+            </View>
+          )}
+
+          {usuario.edad && (
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="cake-variant" size={16} color="#666" />
+              <Text style={styles.infoText}>Edad: {usuario.edad} años</Text>
+            </View>
+          )}
+
+          {usuario.rfc && (
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="card-account-details" size={16} color="#666" />
+              <Text style={styles.infoText}>RFC: {usuario.rfc}</Text>
+            </View>
+          )}
+
+          <View style={styles.infoRow}>
+            <MaterialCommunityIcons name="identifier" size={16} color="#666" />
+            <Text style={styles.infoText}>ID: {usuario.id}</Text>
+          </View>
+        </View>
+
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.approveButton} onPress={() => handleApprove(item)}>
-            <MaterialCommunityIcons name="check" size={16} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.rejectButton} onPress={() => handleReject(item)}>
-            <MaterialCommunityIcons name="close" size={16} color="white" />
+
+
+          <TouchableOpacity
+            style={[styles.approveButton, isProcessing && styles.buttonDisabled]}
+            onPress={() => confirmApproval(usuario, true)}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <MaterialCommunityIcons name="check" size={18} color="#fff" />
+                <Text style={styles.buttonText}>Aprobar</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </View>
-    </View>
-  )
+    )
+  }
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Cargando solicitudes de perfiles...</Text>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Solicitudes de Perfiles</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B4513" />
+          <Text style={styles.loadingText}>Cargando solicitudes...</Text>
+        </View>
       </SafeAreaView>
     )
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>Solicitudes de perfiles</Text>
+        <Text style={styles.headerTitle}>Solicitudes de Perfiles</Text>
       </View>
 
-      <View style={styles.content}>
-        {/* Table */}
-        <View style={styles.table}>
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, styles.nombreColumn]}>Nombre</Text>
-            <Text style={[styles.headerCell, styles.correoColumn]}>Correo electrónico</Text>
-            <Text style={[styles.headerCell, styles.rolColumn]}>Rol</Text>
-            <Text style={[styles.headerCell, styles.accionColumn]}>Acción</Text>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#8B4513"]} />}
+      >
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{usuarios.length}</Text>
+            <Text style={styles.statLabel}>Pendientes</Text>
           </View>
-
-          {/* Table Body */}
-          {getCurrentPageItems().length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons name="account-check" size={64} color="#ccc" />
-              <Text style={styles.emptyText}>No hay solicitudes de perfiles pendientes</Text>
-              <Text style={styles.emptySubtext}>Las nuevas solicitudes aparecerán aquí</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={getCurrentPageItems()}
-              renderItem={renderUsuario}
-              keyExtractor={(item) => item.id.toString()}
-              showsVerticalScrollIndicator={false}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            />
-          )}
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{usuarios.filter((u) => u.rol_id === 2).length}</Text>
+            <Text style={styles.statLabel}>Donantes</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{usuarios.filter((u) => u.rol_id === 3).length}</Text>
+            <Text style={styles.statLabel}>Beneficiarios</Text>
+          </View>
         </View>
 
-        {/* Pagination */}
-        {usuarios.length > 0 && (
-          <View style={styles.pagination}>
-            <TouchableOpacity
-              style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
-              onPress={goToPreviousPage}
-              disabled={currentPage === 1}
-            >
-              <Text style={[styles.paginationButtonText, currentPage === 1 && styles.disabledText]}>← Anterior</Text>
-            </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Solicitudes Pendientes de Aprobación</Text>
 
-            <Text style={styles.pageInfo}>
-              Página {currentPage} de {totalPages}
-            </Text>
-
-            <TouchableOpacity
-              style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
-              onPress={goToNextPage}
-              disabled={currentPage === totalPages}
-            >
-              <Text style={[styles.paginationButtonText, currentPage === totalPages && styles.disabledText]}>
-                Siguiente →
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+          {usuarios.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons name="account-check-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyTitle}>No hay solicitudes pendientes</Text>
+              <Text style={styles.emptySubtitle}>Todos los perfiles han sido procesados</Text>
+            </View>
+          ) : (
+            <View style={styles.usuariosList}>{usuarios.map(renderUsuarioItem)}</View>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -304,159 +309,174 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+  header: {
+    backgroundColor: "#8B4513",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
     color: "#666",
   },
-  header: {
+  statsContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingTop: 20,
+    padding: 20,
+    gap: 10,
   },
-  backButton: {
-    marginRight: 15,
-    padding: 5,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  content: {
+  statCard: {
     flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#8B4513",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+  },
+  section: {
     padding: 20,
   },
-  table: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    overflow: "hidden",
-    elevation: 2,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 15,
+  },
+  usuariosList: {
+    gap: 15,
+  },
+  usuarioCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    flex: 1,
+    elevation: 3,
   },
-  tableHeader: {
+  cardHeader: {
     flexDirection: "row",
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingVertical: 12,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
-  headerCell: {
-    fontSize: 14,
+  userInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  userName: {
+    fontSize: 16,
     fontWeight: "bold",
     color: "#333",
-    textAlign: "center",
+    marginBottom: 2,
   },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingVertical: 12,
-    minHeight: 60,
+  userEmail: {
+    fontSize: 14,
+    color: "#666",
   },
-  cell: {
-    justifyContent: "center",
+  roleBadge: {
     paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  cellText: {
+  roleText: {
     fontSize: 12,
-    color: "#333",
-    textAlign: "center",
+    fontWeight: "600",
+    color: "#fff",
   },
-  nombreColumn: {
-    flex: 2.5,
+  cardBody: {
+    gap: 8,
+    marginBottom: 16,
   },
-  correoColumn: {
-    flex: 3,
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  rolColumn: {
-    flex: 1.5,
-  },
-  accionColumn: {
-    flex: 1.5,
+  infoText: {
+    fontSize: 14,
+    color: "#666",
   },
   actionButtons: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 5,
+    gap: 12,
   },
   approveButton: {
-    backgroundColor: "#28a745",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    flex: 1,
+    backgroundColor: "#4CAF50",
+    borderRadius: 8,
+    paddingVertical: 12,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 6,
   },
   rejectButton: {
-    backgroundColor: "#dc3545",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyContainer: {
     flex: 1,
+    backgroundColor: "#F44336",
+    borderRadius: 8,
+    paddingVertical: 12,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: 40,
+    gap: 6,
   },
-  emptyText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 10,
-    fontWeight: "500",
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#999",
-    textAlign: "center",
-    marginTop: 5,
-  },
-  pagination: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 20,
-    paddingHorizontal: 10,
-  },
-  paginationButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 5,
-  },
-  paginationButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  disabledButton: {
+  buttonDisabled: {
     backgroundColor: "#ccc",
   },
-  disabledText: {
-    color: "#999",
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
-  pageInfo: {
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 16,
+  },
+  emptySubtitle: {
     fontSize: 14,
     color: "#666",
+    marginTop: 8,
   },
 })

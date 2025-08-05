@@ -14,11 +14,13 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  Platform,
 } from "react-native"
 import { useRouter } from "expo-router"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { generateFastApiUrl } from "@/utils"
+import DateTimePicker from "@react-native-community/datetimepicker"
 
 interface EstatusG {
   id: number
@@ -61,8 +63,42 @@ export default function AdminEventos() {
     descripcion: "",
     estatus_id: 1,
   })
+
+  // Estados para el selector de fechas
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [datePickerMode, setDatePickerMode] = useState<"start" | "end">("start")
+  const [tempDate, setTempDate] = useState(new Date())
+
   const router = useRouter()
   const itemsPerPage = 10
+
+  // Helper function to safely convert error messages to strings
+  const getErrorMessage = (error: any): string => {
+    if (typeof error === "string") {
+      return error
+    }
+    if (Array.isArray(error)) {
+      return error.join(", ")
+    }
+    if (error && typeof error === "object") {
+      return JSON.stringify(error)
+    }
+    return "Error desconocido"
+  }
+
+  // Helper function to format date for API (YYYY-MM-DD)
+  const formatDateForAPI = (date: Date): string => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  // Helper function to parse date from API
+  const parseDateFromAPI = (dateString: string): Date => {
+    const [year, month, day] = dateString.split("-").map(Number)
+    return new Date(year, month - 1, day)
+  }
 
   useEffect(() => {
     fetchEventos()
@@ -109,29 +145,12 @@ export default function AdminEventos() {
 
   const fetchEstatuses = async () => {
     try {
-      const token = await AsyncStorage.getItem("token")
-      if (!token) return
-
-      // Intentar obtener estatuses de la base de datos
-      // const response = await fetch(generateFastApiUrl("/estatuses/"), {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      // })
-
-      // if (response.ok) {
-      //   const data = await response.json()
-      //   setEstatuses(data)
-      // } else {
-        // Si no existe el endpoint, usar valores por defecto basados en la base de datos
-        setEstatuses([
-          { id: 1, nombre: "Activo" },
-          { id: 2, nombre: "Inactivo" },
-        ])
-      //}
+      setEstatuses([
+        { id: 1, nombre: "Activo" },
+        { id: 2, nombre: "Inactivo" },
+      ])
     } catch (error) {
       console.error("Error fetching estatuses:", error)
-      // Valores por defecto si hay error
       setEstatuses([
         { id: 1, nombre: "Activo" },
         { id: 2, nombre: "Inactivo" },
@@ -152,7 +171,6 @@ export default function AdminEventos() {
         return
       }
 
-      // Para crear, siempre usar estatus_id = 1 (Activo)
       const createData = {
         ...formData,
         estatus_id: 1,
@@ -173,8 +191,13 @@ export default function AdminEventos() {
         resetForm()
         fetchEventos()
       } else {
-        const errorData = await response.json()
-        Alert.alert("Error", errorData.detail || "No se pudo crear el evento")
+        try {
+          const errorData = await response.json()
+          const errorMessage = getErrorMessage(errorData.detail || errorData.message || errorData)
+          Alert.alert("Error", errorMessage)
+        } catch (parseError) {
+          Alert.alert("Error", "No se pudo crear el evento")
+        }
       }
     } catch (error) {
       console.error("Error creating evento:", error)
@@ -211,8 +234,13 @@ export default function AdminEventos() {
         resetForm()
         fetchEventos()
       } else {
-        const errorData = await response.json()
-        Alert.alert("Error", errorData.detail || "No se pudo actualizar el evento")
+        try {
+          const errorData = await response.json()
+          const errorMessage = getErrorMessage(errorData.detail || errorData.message || errorData)
+          Alert.alert("Error", errorMessage)
+        } catch (parseError) {
+          Alert.alert("Error", "No se pudo actualizar el evento")
+        }
       }
     } catch (error) {
       console.error("Error updating evento:", error)
@@ -245,7 +273,13 @@ export default function AdminEventos() {
               Alert.alert("Éxito", "Evento eliminado correctamente")
               fetchEventos()
             } else {
-              Alert.alert("Error", "No se pudo eliminar el evento")
+              try {
+                const errorData = await response.json()
+                const errorMessage = getErrorMessage(errorData.detail || errorData.message || errorData)
+                Alert.alert("Error", errorMessage)
+              } catch (parseError) {
+                Alert.alert("Error", "No se pudo eliminar el evento")
+              }
             }
           } catch (error) {
             console.error("Error deleting evento:", error)
@@ -286,7 +320,8 @@ export default function AdminEventos() {
 
   const formatDate = (dateString: string) => {
     try {
-      const date = new Date(dateString)
+      const [year, month, day] = dateString.split("-").map(Number)
+      const date = new Date(year, month - 1, day)
       return date.toLocaleDateString("es-ES", {
         day: "2-digit",
         month: "2-digit",
@@ -299,7 +334,21 @@ export default function AdminEventos() {
 
   const getEstatusName = (estatusId: number) => {
     const estatus = estatuses.find((e) => e.id === estatusId)
-    return estatus?.nombre || "Activo" // Por defecto "Activo" en lugar de "Desconocido"
+    return estatus?.nombre || "Activo"
+  }
+
+  const getEventStatus = (fechaIn: string, fechaTer: string) => {
+    const now = new Date()
+    const inicio = new Date(fechaIn)
+    const fin = new Date(fechaTer)
+
+    if (now < inicio) {
+      return { status: "Próximo", color: "#2196F3", icon: "calendar-clock" }
+    } else if (now >= inicio && now <= fin) {
+      return { status: "En curso", color: "#4CAF50", icon: "calendar-check" }
+    } else {
+      return { status: "Finalizado", color: "#757575", icon: "calendar-remove" }
+    }
   }
 
   const getCurrentPageItems = () => {
@@ -320,32 +369,101 @@ export default function AdminEventos() {
     }
   }
 
-  const renderEvento = ({ item }: { item: Evento }) => (
-    <View style={styles.tableRow}>
-      <View style={[styles.cell, styles.nombreColumn]}>
-        <Text style={styles.cellText} numberOfLines={2}>
-          {item.nombre}
-        </Text>
-      </View>
-      <View style={[styles.cell, styles.fechaColumn]}>
-        <Text style={styles.cellText}>{formatDate(item.fechaIn)}</Text>
-      </View>
-      <View style={[styles.cell, styles.fechaColumn]}>
-        <Text style={styles.cellText}>{formatDate(item.fechaTer)}</Text>
-      </View>
-      <View style={[styles.cell, styles.estatusColumn]}>
-        <Text style={styles.cellText}>{getEstatusName(item.estatus_id)}</Text>
-      </View>
-      <View style={[styles.cell, styles.accionColumn]}>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.editButton} onPress={() => openEditModal(item)}>
-            <MaterialCommunityIcons name="pencil" size={16} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteEvento(item.id, item.nombre)}>
-            <MaterialCommunityIcons name="delete" size={16} color="white" />
-          </TouchableOpacity>
+  // Funciones para el selector de fechas
+  const openDatePicker = (mode: "start" | "end") => {
+    setDatePickerMode(mode)
+    if (mode === "start" && formData.fechaIn) {
+      setTempDate(parseDateFromAPI(formData.fechaIn))
+    } else if (mode === "end" && formData.fechaTer) {
+      setTempDate(parseDateFromAPI(formData.fechaTer))
+    } else {
+      setTempDate(new Date())
+    }
+    setShowDatePicker(true)
+  }
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false)
+
+    if (selectedDate && event.type !== "dismissed") {
+      const formattedDate = formatDateForAPI(selectedDate)
+      if (datePickerMode === "start") {
+        setFormData({ ...formData, fechaIn: formattedDate })
+      } else {
+        setFormData({ ...formData, fechaTer: formattedDate })
+      }
+    }
+  }
+
+  const confirmDateSelection = () => {
+    setShowDatePicker(false)
+  }
+
+  const renderEvento = ({ item }: { item: Evento }) => {
+    const eventStatus = getEventStatus(item.fechaIn, item.fechaTer)
+
+    return (
+      <View style={styles.eventoCard}>
+        <View style={styles.cardHeader}>
+          <View style={styles.eventoInfo}>
+            <Text style={styles.eventoNombre}>{item.nombre}</Text>
+            <Text style={styles.eventoDescripcion} numberOfLines={2}>
+              {item.descripcion}
+            </Text>
+          </View>
+          <View style={styles.cardActions}>
+            <View style={[styles.statusBadge, { backgroundColor: eventStatus.color }]}>
+              <MaterialCommunityIcons name={eventStatus.icon as any} size={14} color="#fff" />
+              <Text style={styles.statusText}>{eventStatus.status}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.cardBody}>
+          <View style={styles.dateRow}>
+            <View style={styles.dateItem}>
+              <MaterialCommunityIcons name="calendar-start" size={16} color="#666" />
+              <Text style={styles.dateLabel}>Inicio:</Text>
+              <Text style={styles.dateValue}>{formatDate(item.fechaIn)}</Text>
+            </View>
+            <View style={styles.dateItem}>
+              <MaterialCommunityIcons name="calendar-end" size={16} color="#666" />
+              <Text style={styles.dateLabel}>Fin:</Text>
+              <Text style={styles.dateValue}>{formatDate(item.fechaTer)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <MaterialCommunityIcons name="identifier" size={16} color="#666" />
+            <Text style={styles.infoText}>ID: {item.id}</Text>
+            <Text style={styles.infoText}>• Estatus: {getEstatusName(item.estatus_id)}</Text>
+          </View>
+
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.editButton} onPress={() => openEditModal(item)}>
+              <MaterialCommunityIcons name="pencil" size={16} color="white" />
+              <Text style={styles.actionButtonText}>Editar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteEvento(item.id, item.nombre)}>
+              <MaterialCommunityIcons name="delete" size={16} color="white" />
+              <Text style={styles.actionButtonText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
+    )
+  }
+
+  const renderDateInput = (label: string, value: string, mode: "start" | "end") => (
+    <View style={styles.inputGroup}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <TouchableOpacity style={styles.dateInput} onPress={() => openDatePicker(mode)}>
+        <MaterialCommunityIcons name="calendar" size={20} color="#666" />
+        <Text style={[styles.dateInputText, !value && styles.placeholderText]}>
+          {value ? formatDate(value) : "Seleccionar fecha"}
+        </Text>
+        <MaterialCommunityIcons name="chevron-down" size={20} color="#666" />
+      </TouchableOpacity>
     </View>
   )
 
@@ -376,25 +494,8 @@ export default function AdminEventos() {
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Fecha de inicio (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.textInput}
-                value={formData.fechaIn}
-                onChangeText={(text) => setFormData({ ...formData, fechaIn: text })}
-                placeholder="2024-01-01"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Fecha de término (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.textInput}
-                value={formData.fechaTer}
-                onChangeText={(text) => setFormData({ ...formData, fechaTer: text })}
-                placeholder="2024-01-31"
-              />
-            </View>
+            {renderDateInput("Fecha de inicio", formData.fechaIn, "start")}
+            {renderDateInput("Fecha de término", formData.fechaTer, "end")}
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Descripción</Text>
@@ -433,6 +534,17 @@ export default function AdminEventos() {
           </View>
         </View>
       </View>
+
+      {/* Date Picker */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={tempDate}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          onChange={onDateChange}
+          minimumDate={new Date()}
+        />
+      )}
     </Modal>
   )
 
@@ -464,25 +576,8 @@ export default function AdminEventos() {
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Fecha de inicio (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.textInput}
-                value={formData.fechaIn}
-                onChangeText={(text) => setFormData({ ...formData, fechaIn: text })}
-                placeholder="2024-01-01"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Fecha de término (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.textInput}
-                value={formData.fechaTer}
-                onChangeText={(text) => setFormData({ ...formData, fechaTer: text })}
-                placeholder="2024-01-31"
-              />
-            </View>
+            {renderDateInput("Fecha de inicio", formData.fechaIn, "start")}
+            {renderDateInput("Fecha de término", formData.fechaTer, "end")}
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Descripción</Text>
@@ -552,60 +647,96 @@ export default function AdminEventos() {
           </View>
         </View>
       </View>
+
+      {/* Date Picker para Edit Modal */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={tempDate}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          onChange={onDateChange}
+          minimumDate={new Date()}
+        />
+      )}
     </Modal>
   )
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Cargando eventos...</Text>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Gestión de Eventos</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B4513" />
+          <Text style={styles.loadingText}>Cargando eventos...</Text>
+        </View>
       </SafeAreaView>
     )
   }
+
+  const eventosActivos = eventos
+  const eventosProximos = eventosActivos.filter((e) => new Date() < new Date(e.fechaIn)).length
+  const eventosEnCurso = eventosActivos.filter((e) => {
+    const now = new Date()
+    return now >= new Date(e.fechaIn) && now <= new Date(e.fechaTer)
+  }).length
+  const eventosFinalizados = eventosActivos.filter((e) => new Date() > new Date(e.fechaTer)).length
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>Administración de eventos</Text>
+        <Text style={styles.headerTitle}>Gestión de Eventos</Text>
         <TouchableOpacity style={styles.addButton} onPress={() => setShowCreateModal(true)}>
-          <MaterialCommunityIcons name="plus" size={24} color="#007AFF" />
+          <MaterialCommunityIcons name="plus" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.content}>
-        {/* Table */}
-        <View style={styles.table}>
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, styles.nombreColumn]}>Nombre</Text>
-            <Text style={[styles.headerCell, styles.fechaColumn]}>Fecha Inicio</Text>
-            <Text style={[styles.headerCell, styles.fechaColumn]}>Fecha Fin</Text>
-            <Text style={[styles.headerCell, styles.estatusColumn]}>Estatus</Text>
-            <Text style={[styles.headerCell, styles.accionColumn]}>Acción</Text>
-          </View>
-
-          {/* Table Body */}
-          {getCurrentPageItems().length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons name="calendar-blank" size={64} color="#ccc" />
-              <Text style={styles.emptyText}>No hay eventos registrados</Text>
-              <Text style={styles.emptySubtext}>Crea tu primer evento usando el botón +</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={getCurrentPageItems()}
-              renderItem={renderEvento}
-              keyExtractor={(item) => item.id.toString()}
-              showsVerticalScrollIndicator={false}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            />
-          )}
+      {/* Estadísticas */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{eventosActivos.length}</Text>
+          <Text style={styles.statLabel}>Total</Text>
         </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statNumber, { color: "#2196F3" }]}>{eventosProximos}</Text>
+          <Text style={styles.statLabel}>Próximos</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statNumber, { color: "#4CAF50" }]}>{eventosEnCurso}</Text>
+          <Text style={styles.statLabel}>En Curso</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statNumber, { color: "#757575" }]}>{eventosFinalizados}</Text>
+          <Text style={styles.statLabel}>Finalizados</Text>
+        </View>
+      </View>
+
+      <View style={styles.content}>
+        {/* Lista de Eventos */}
+        {getCurrentPageItems().length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="calendar-blank" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>No hay eventos registrados</Text>
+            <Text style={styles.emptySubtext}>Crea tu primer evento usando el botón +</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={getCurrentPageItems()}
+            renderItem={renderEvento}
+            keyExtractor={(item) => item.id.toString()}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#8B4513"]} />}
+            contentContainerStyle={styles.listContainer}
+          />
+        )}
 
         {/* Pagination */}
         {eventos.length > 0 && (
@@ -647,136 +778,199 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+  header: {
+    backgroundColor: "#8B4513",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    flex: 1,
+  },
+  addButton: {
+    padding: 8,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: 12,
     fontSize: 16,
     color: "#666",
   },
-  header: {
+  statsContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingTop: 20,
+    padding: 20,
+    gap: 10,
   },
-  backButton: {
-    marginRight: 15,
-    padding: 5,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+  statCard: {
     flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  addButton: {
-    padding: 5,
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#8B4513",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
   },
   content: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
   },
-  table: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    overflow: "hidden",
-    elevation: 2,
+  listContainer: {
+    paddingBottom: 20,
+  },
+  eventoCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    flex: 1,
+    elevation: 3,
   },
-  tableHeader: {
+  cardHeader: {
     flexDirection: "row",
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingVertical: 12,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
-  headerCell: {
-    fontSize: 14,
+  eventoInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  eventoNombre: {
+    fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-    textAlign: "center",
+    marginBottom: 4,
   },
-  tableRow: {
+  eventoDescripcion: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
+  },
+  cardActions: {
+    alignItems: "flex-end",
+  },
+  statusBadge: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingVertical: 12,
-    minHeight: 60,
-  },
-  cell: {
-    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
-  cellText: {
+  statusText: {
+    color: "#fff",
     fontSize: 12,
+    fontWeight: "600",
+  },
+  cardBody: {
+    gap: 12,
+  },
+  dateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  dateItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: "#999",
+  },
+  dateValue: {
+    fontSize: 14,
+    fontWeight: "600",
     color: "#333",
-    textAlign: "center",
   },
-  nombreColumn: {
-    flex: 3,
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  fechaColumn: {
-    flex: 2,
-  },
-  estatusColumn: {
-    flex: 1.5,
-  },
-  accionColumn: {
-    flex: 1.5,
+  infoText: {
+    fontSize: 14,
+    color: "#666",
   },
   actionButtons: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 5,
+    gap: 8,
+    marginTop: 8,
   },
   editButton: {
     backgroundColor: "#007AFF",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 4,
+    flex: 1,
+    justifyContent: "center",
   },
   deleteButton: {
     backgroundColor: "#dc3545",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 4,
+    flex: 1,
+    justifyContent: "center",
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 40,
+    paddingVertical: 40,
   },
   emptyText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 10,
-    fontWeight: "500",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginTop: 16,
+    marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#999",
+    color: "#666",
     textAlign: "center",
-    marginTop: 5,
   },
   pagination: {
     flexDirection: "row",
@@ -784,9 +978,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
     paddingHorizontal: 10,
+    paddingBottom: 20,
   },
   paginationButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#8B4513",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 5,
@@ -856,6 +1051,25 @@ const styles = StyleSheet.create({
   textArea: {
     height: 80,
     textAlignVertical: "top",
+  },
+  dateInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#f9f9f9",
+    gap: 8,
+  },
+  dateInputText: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+  },
+  placeholderText: {
+    color: "#999",
   },
   statusNote: {
     flexDirection: "row",
