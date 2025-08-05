@@ -33,10 +33,15 @@ Route::middleware(['auth.check'])->group(function () {
     // Rutas para beneficiarios
     Route::get('/eventos/usuario', [EventoController::class, 'verEventosDisponibles'])->name('eventos.usuario');
     Route::post('/eventos/unirse/{id}', [EventoController::class, 'unirseEvento'])->name('eventos.unirse');
+    Route::delete('/eventos/salir/{id}', [EventoController::class, 'salirEventoBeneficiario'])->name('eventos.salir.beneficiario');
 
     // Rutas para donantes
     Route::get('/eventos/donante', [EventoController::class, 'verEventosDisponiblesDonante'])->name('eventos.donante');
     Route::post('/eventos/donante/unirse/{id}', [EventoController::class, 'unirseEventoDonante'])->name('eventos.unirse.donante');
+    Route::delete('/eventos/donante/salir/{id}', [EventoController::class, 'salirEventoDonante'])->name('eventos.salir.donante');
+
+    // Ruta adicional para verificar participación (opcional)
+    Route::get('/eventos/{id}/participacion', [EventoController::class, 'verificarParticipacion'])->name('eventos.participacion');
 
     // ✅ Sistema completo de donaciones
     Route::prefix('donaciones')->group(function () {

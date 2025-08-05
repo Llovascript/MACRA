@@ -133,6 +133,12 @@
             color: #721c24;
         }
         
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        
         .text-center {
             text-align: center;
         }
@@ -165,6 +171,12 @@
             </div>
         @endif
 
+        @if(session('info'))
+            <div class="alert alert-info">
+                {{ session('info') }}
+            </div>
+        @endif
+
         @if($errors->any())
             <div class="alert alert-danger">
                 {{ $errors->first() }}
@@ -193,7 +205,7 @@
                                 @if($evento['ya_unido'] ?? false)
                                     <button class="btn btn-joined btn-sm" disabled>Unido</button>
                                 @else
-                                    <form action="{{ route('eventos.unirseDonante', $evento['id']) }}" method="POST">
+                                    <form action="{{ route('eventos.unirse.donante', $evento['id']) }}" method="POST">
                                         @csrf
                                         <button class="btn btn-primary btn-sm" type="submit">Unirse</button>
                                     </form>
@@ -207,6 +219,10 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <div class="text-center" style="margin-top: 20px;">
+            <a href="{{ route('dashboard') }}" class="btn btn-primary">Volver al Dashboard</a>
         </div>
     </div>
 </body>
