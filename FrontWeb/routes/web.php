@@ -106,32 +106,14 @@ Route::middleware(['auth.check:admin'])->group(function () {
         Route::post('/{id}/actualizar', [EventoController::class, 'update'])->name('admin.eventos.update');
         Route::get('/capacidad', [EventoController::class, 'capacidad'])->name('admin.eventos.capacidad');
     });
-});
 
-/*
-|--------------------------------------------------------------------------
-| Rutas de Donantes (rol_id = 2)
-|--------------------------------------------------------------------------
-*/
+    // Rutas para beneficiarios
+    Route::get('/eventos/usuario', [EventoController::class, 'verEventosDisponibles'])->name('eventos.usuario');
+    Route::post('/eventos/unirse/{id}', [EventoController::class, 'unirseEvento'])->name('eventos.unirse');
 
-Route::middleware(['auth.check:donante'])->group(function () {
-    // Menu principal
-    Route::get('/menuDonantes', [UserController::class, 'menuDonantes'])->name('donante.menu');
-    Route::get('/menuDonador', [UserController::class, 'menuDonantes'])->name('menuDonador'); // Alias
-    
-    // Perfil de donante
-    Route::get('/perfilDonante', [PerfilDonanteController::class, 'index'])->name('perfilDonante');
-    
-    // === SISTEMA DE DONACIONES PARA DONANTES ===
-    Route::prefix('donante')->group(function () {
-        // Historial de solicitudes de donación
-        Route::get('/historial-solicitudes', [DonacionController::class, 'historialSolicitudes'])->name('historialSolicitudes');
-        
-        // Crear nueva donación
-        Route::get('/agregar-articulo', [DonacionController::class, 'agregarArticulo'])->name('agregarArticulo');
-        Route::post('/crear-donacion', [DonacionController::class, 'crearDonacion'])->name('crearDonacion');
-        
-        // Rutas alternativas del sistema anterior
+    // ✅ Sistema completo de donaciones
+    Route::prefix('donaciones')->group(function () {
+        // Vista para crear nueva donación
         Route::get('/crear', [DonacionController::class, 'crear'])->name('donaciones.crear');
         Route::post('/guardar', [DonacionController::class, 'guardar'])->name('donaciones.guardar');
         Route::get('/historial', [DonacionController::class, 'historial'])->name('donaciones.historial');

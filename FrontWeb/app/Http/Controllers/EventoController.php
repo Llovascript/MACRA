@@ -134,7 +134,7 @@ class EventoController extends Controller
         return back()->withErrors(['error' => 'Error actualizando evento.'])->withInput();
     }
 
-    // Mostrar eventos disponibles para usuarios beneficiarios
+    // CORREGIDO: Mostrar eventos disponibles para usuarios beneficiarios
     public function verEventosDisponibles()
     {
         $token = Session::get('access_token');
@@ -143,12 +143,31 @@ class EventoController extends Controller
         }
 
         try {
+            // Obtener todos los eventos
             $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos");
             $eventos = $response->json();
 
-            return view('usuario.eventos_disponibles', compact('eventos'));
+            // Obtener los eventos donde el usuario actual está como beneficiario
+            $misEventosResponse = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos/me/como_beneficiario");
+            $misEventos = [];
+            
+            if ($misEventosResponse->successful()) {
+                $misEventosData = $misEventosResponse->json();
+                // Crear un array con los IDs de eventos donde ya está unido
+                foreach ($misEventosData as $evento) {
+                    $misEventos[$evento['evento_id']] = true;
+                }
+            }
+
+            // Marcar los eventos donde ya está unido
+            foreach ($eventos as &$evento) {
+                $evento['ya_unido'] = isset($misEventos[$evento['id']]);
+            }
+
+            return view('usuario.eventos_disponibles', ['eventos' => $eventos]);
+
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'No se pudieron cargar los eventos.']);
+            return back()->withErrors(['error' => 'No se pudieron cargar los eventos: ' . $e->getMessage()]);
         }
     }
 
@@ -167,14 +186,106 @@ class EventoController extends Controller
                 return redirect()->route('eventos.usuario')->with('success', 'Te uniste correctamente al evento.');
             } else {
                 $detalle = $response->json()['detail'] ?? 'Error';
+
+                // Para evitar mostrar el mensaje cuando ya está unido (409)
+                if ($response->status() === 409) {
+                    return redirect()->route('eventos.usuario')->with('info', 'Ya estás unido a este evento.');
+                }
+
                 return back()->withErrors(['error' => "No se pudo unir al evento: $detalle"]);
             }
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al conectar con la API.']);
+            return back()->withErrors(['error' => 'Error al conectar con la API: ' . $e->getMessage()]);
         }
     }
 
-    // ✅ NUEVO: Capacidad por evento (beneficiarios y donantes)
+    // CORREGIDO: Mostrar eventos disponibles para donantes
+    public function verEventosDisponiblesDonante()
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            // Obtener todos los eventos
+            $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos");
+            $eventos = $response->json();
+
+            // Obtener los eventos donde el usuario actual está como donante
+            $misEventosResponse = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos/me/como_donante");
+            $misEventos = [];
+            
+            if ($misEventosResponse->successful()) {
+                $misEventosData = $misEventosResponse->json();
+                // Crear un array con los IDs de eventos donde ya está unido
+                foreach ($misEventosData as $evento) {
+                    $misEventos[$evento['evento_id']] = true;
+                }
+            }
+
+            // Marcar los eventos donde ya está unido
+            foreach ($eventos as &$evento) {
+                $evento['ya_unido'] = isset($misEventos[$evento['id']]);
+            }
+
+            return view('donaciones.eventos_disponibles_donante', ['eventos' => $eventos]);
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'No se pudieron cargar los eventos: ' . $e->getMessage()]);
+        }
+    }
+
+    // Unirse como donante a un evento
+    public function unirseEventoDonante($id)
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->post("{$this->apiBaseUrl}/eventos/{$id}/unirse_como_donante");
+
+            if ($response->successful()) {
+                return redirect()->route('eventos.donante')->with('success', 'Te uniste correctamente al evento.');
+            } else {
+                $detalle = $response->json()['detail'] ?? 'Error';
+
+                // Evitar mostrar mensaje si ya está unido (409)
+                if ($response->status() === 409) {
+                    return redirect()->route('eventos.donante')->with('info', 'Ya estás unido a este evento.');
+                }
+
+                return back()->withErrors(['error' => "No se pudo unir al evento: $detalle"]);
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al conectar con la API: ' . $e->getMessage()]);
+        }
+    }
+
+    // Método para verificar participación en un evento específico (alternativo)
+    public function verificarParticipacion($id)
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
+
+        try {
+            $response = Http::withToken($token)->get("{$this->apiBaseUrl}/eventos/{$id}/participacion");
+            
+            if ($response->successful()) {
+                return response()->json($response->json());
+            } else {
+                return response()->json(['error' => 'Error al verificar participación'], 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error de conexión'], 500);
+        }
+    }
+
+    // NUEVO: Capacidad por evento (beneficiarios y donantes)
     public function capacidad()
     {
         $token = Session::get('access_token');
@@ -193,6 +304,50 @@ class EventoController extends Controller
             }
         } catch (\Exception $e) {
             return redirect()->route('admin.eventos.menu')->with('error', 'No se pudo conectar con la API.');
+        }
+    }
+
+    // NUEVO: Salir de un evento como beneficiario
+    public function salirEventoBeneficiario($id)
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->delete("{$this->apiBaseUrl}/eventos/{$id}/salir_como_beneficiario");
+
+            if ($response->successful()) {
+                return redirect()->route('eventos.usuario')->with('success', 'Has salido del evento correctamente.');
+            } else {
+                $detalle = $response->json()['detail'] ?? 'Error';
+                return back()->withErrors(['error' => "No se pudo salir del evento: $detalle"]);
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al conectar con la API: ' . $e->getMessage()]);
+        }
+    }
+
+    // NUEVO: Salir de un evento como donante
+    public function salirEventoDonante($id)
+    {
+        $token = Session::get('access_token');
+        if (!$token) {
+            return redirect()->route('login');
+        }
+
+        try {
+            $response = Http::withToken($token)->delete("{$this->apiBaseUrl}/eventos/{$id}/salir_como_donante");
+
+            if ($response->successful()) {
+                return redirect()->route('eventos.donante')->with('success', 'Has salido del evento correctamente.');
+            } else {
+                $detalle = $response->json()['detail'] ?? 'Error';
+                return back()->withErrors(['error' => "No se pudo salir del evento: $detalle"]);
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al conectar con la API: ' . $e->getMessage()]);
         }
     }
 }
