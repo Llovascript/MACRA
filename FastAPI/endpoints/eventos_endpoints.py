@@ -181,90 +181,103 @@ def delete_evento(
         db.rollback()
         raise HTTPException(status_code=400, detail="Error eliminando evento")
 
-
-@router.post("/{evento_id}/unirse_como_donante", response_model=DonanteEventoResponse)
-def join_event_as_donante(
-    evento_id: int,
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["donante"]))
-):
-    evento = db.query(Evento).filter(Evento.id == evento_id, Evento.del_flag == False).first()
-    if not evento:
-        raise HTTPException(status_code=404, detail="Evento no encontrado")
-
-    existing_entry = db.query(DonanteEvento).filter(
-        DonanteEvento.evento_id == evento_id,
-        DonanteEvento.donante_id == current_user.id
-    ).first()
-    if existing_entry:
-        raise HTTPException(status_code=409, detail="Ya estás unido a este evento como donante")
-
-    new_entry = DonanteEvento(evento_id=evento_id, donante_id=current_user.id)
-    db.add(new_entry)
-    try:
-        db.commit()
-        db.refresh(new_entry)
-        return new_entry
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Error al unirse al evento como donante")
-
-
 @router.post("/{evento_id}/unirse_como_beneficiario", response_model=BeneficiarioEventoResponse)
 def join_event_as_beneficiario(
     evento_id: int,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_role(["beneficiario"]))
 ):
-    evento = db.query(Evento).filter(Evento.id == evento_id, Evento.del_flag == False).first()
+    # Verificar que el evento existe y está activo
+    evento = db.query(Evento).filter(
+        Evento.id == evento_id, 
+        Evento.del_flag == False
+    ).first()
     if not evento:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
 
-    existing_entry = db.query(BeneficiarioEvento).filter(
-        BeneficiarioEvento.evento_id == evento_id,
-        BeneficiarioEvento.beneficiario_id == current_user.id
-    ).first()
-    if existing_entry:
-        raise HTTPException(status_code=409, detail="Ya estás unido a este evento como beneficiario")
+    # Verificar que el usuario está aprobado
+    if not current_user.aprobacion:
+        raise HTTPException(status_code=403, detail="Usuario no aprobado")
 
-    new_entry = BeneficiarioEvento(evento_id=evento_id, beneficiario_id=current_user.id)
-    db.add(new_entry)
+    # Usar try-catch para manejar duplicados a nivel de base de datos
     try:
+        # Verificar duplicado en la misma transacción
+        existing_entry = db.query(BeneficiarioEvento).filter(
+            BeneficiarioEvento.evento_id == evento_id,
+            BeneficiarioEvento.beneficiario_id == current_user.id
+        ).with_for_update().first()  # Bloqueo para evitar condiciones de carrera
+        
+        if existing_entry:
+            raise HTTPException(status_code=409, detail="Ya estás unido a este evento como beneficiario")
+
+        # Crear nueva entrada
+        new_entry = BeneficiarioEvento(
+            evento_id=evento_id, 
+            beneficiario_id=current_user.id
+        )
+        db.add(new_entry)
         db.commit()
         db.refresh(new_entry)
+        
         return new_entry
+        
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya estás unido a este evento como beneficiario")
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Error al unirse al evento como beneficiario")
+        raise HTTPException(status_code=400, detail=f"Error al unirse al evento: {str(e)}")
 
+# NUEVOS ENDPOINTS PARA CONSULTAR PARTICIPACIÓN
 
-# 🔥 NUEVO ENDPOINT: /eventos/capacidad
-@router.get("/capacidad", tags=["eventos"])
-def get_capacidad_eventos(
+@router.get("/me/como_donante", response_model=List[DonanteEventoResponse])
+def get_my_donante_events(
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin"]))
+    current_user: Usuario = Depends(require_role(["donante"]))
 ):
-    """
-    Devuelve una lista de eventos con la cantidad de beneficiarios y donantes registrados en cada uno.
-    Solo accesible para usuarios con rol 'admin'.
-    """
-    eventos = db.query(Evento).filter(Evento.del_flag == False).all()
-    resultado = []
+    """Obtener eventos donde el usuario actual participa como donante"""
+    return db.query(DonanteEvento).filter(
+        DonanteEvento.donante_id == current_user.id
+    ).all()
 
-    for evento in eventos:
-        beneficiarios_count = db.query(BeneficiarioEvento).filter(
-            BeneficiarioEvento.evento_id == evento.id
-        ).count()
+@router.get("/me/como_beneficiario", response_model=List[BeneficiarioEventoResponse])
+def get_my_beneficiario_events(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["beneficiario"]))
+):
+    """Obtener eventos donde el usuario actual participa como beneficiario"""
+    return db.query(BeneficiarioEvento).filter(
+        BeneficiarioEvento.beneficiario_id == current_user.id
+    ).all()
 
-        donantes_count = db.query(DonanteEvento).filter(
-            DonanteEvento.evento_id == evento.id
-        ).count()
-
-        resultado.append({
-            "evento_id": evento.id,
-            "nombre_evento": evento.nombre,
-            "beneficiarios": beneficiarios_count,
-            "donantes": donantes_count
-        })
-
-    return resultado
+@router.get("/{evento_id}/participacion")
+def check_participation(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """Verificar si el usuario actual participa en un evento específico"""
+    is_donante = False
+    is_beneficiario = False
+    
+    if current_user.rol.nombre == "donante":
+        is_donante = db.query(DonanteEvento).filter(
+            DonanteEvento.evento_id == evento_id,
+            DonanteEvento.donante_id == current_user.id
+        ).first() is not None
+    
+    if current_user.rol.nombre == "beneficiario":
+        is_beneficiario = db.query(BeneficiarioEvento).filter(
+            BeneficiarioEvento.evento_id == evento_id,
+            BeneficiarioEvento.beneficiario_id == current_user.id
+        ).first() is not None
+    
+    return {
+        "evento_id": evento_id,
+        "user_id": current_user.id,
+        "is_donante": is_donante,
+        "is_beneficiario": is_beneficiario
+    }
