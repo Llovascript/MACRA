@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.ajolotetactico.FrontMovil"
     },
     "web": {
       "bundler": "metro",
@@ -40,7 +41,11 @@
     },
     "extra": {
       "FASTAPI_BASE_URL": "https://fastapi-2hwp.onrender.com",
-      "FASTAPI_DEV_BASE_URL": "http://192.168.1.110:5001"
+      "FASTAPI_DEV_BASE_URL": "http://192.168.1.110:5001",
+      "router": {},
+      "eas": {
+        "projectId": "99c3b3c2-f4c3-4ba0-8292-976839d94578"
+      }
     }
   }
 }
